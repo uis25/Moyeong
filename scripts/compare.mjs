@@ -153,6 +153,8 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
 }
 const focusNotes = [];
 const browser = await chromium.launch();
+// 미리 한 번 열어 둠: 코드 변경 직후 Vite가 첫 로딩 때 의존성을 최적화하며 페이지를 새로고침하는 것을 비교 전에 끝내기 위함
+{ const c = await browser.newContext(), p = await c.newPage(); for (const u of Object.values(URLS)) { await p.goto(u, { waitUntil: "networkidle" }); await p.waitForTimeout(1500) } await c.close() }
 const only = process.argv[2];
 let bad = 0;
 const suites = [
