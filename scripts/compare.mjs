@@ -22,9 +22,15 @@ const BASE = server.resolvedUrls.local[0].replace(/\/$/, "");
 const URLS = { orig: BASE + "/original/original/index.html", react: BASE + "/" };
 const settle = (p, ms = 900) => p.waitForTimeout(ms);
 // 원본에서 의도적으로 바꾼 부분(docs/differences.md)은 원본 쪽에 같은 변경을 CSS로 적용한 뒤 비교
-const ORIGINAL_OVERRIDES = [
-  ".card .top > div > .badge{display:none!important}", // 정책 카드 맨 위 판정·상태 배지 제거
-].join("\n");
+const ORIGINAL_OVERRIDES = "";
+// 원본이 카드 HTML을 만드는 card() 함수를 감싸서 같은 변경을 적용 (요소 자체를 빼서 React와 같은 DOM으로 만듦)
+const ORIGINAL_SCRIPT = () => {
+  const card = window.card;
+  // 정책 카드: 자격 판정 배지 제거, 모집 상태 배지는 "확인 필요"일 때만 제거
+  window.card = x => card(x).replace(/(<div class="top"><div>)<span class="badge [^"]*">[^<]*<\/span>(<span class="badge [^"]*">([^<]*)<\/span>)/,
+    (m, head, status, text) => head + (text.trim() == "확인 필요" ? "" : status));
+  window.render();
+};
 // 클릭 후 상세 영역 등장 애니메이션(0.2초)이 끝날 때까지 기다림 (연속 클릭 시 타이밍 차이 방지)
 const tap = async (p, sel) => { await p.click(sel); await p.waitForTimeout(250) };
 
@@ -148,7 +154,7 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     pages[k].on("pageerror", e => console.log(`[${label}/${k}] pageerror`, e.message));
     pages[k].on("console", m => { if (m.type() == "error" || m.type() == "warning") console.log(`[${label}/${k}] console.${m.type()}`, m.text().slice(0, 200)) });
     await pages[k].goto(URLS[k], { waitUntil: "networkidle" }); await pages[k].evaluate(() => document.fonts.ready);
-    if (k == "orig" && ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES });
+    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT) }
     await settle(pages[k], 500);
   }
   let bad = 0;
