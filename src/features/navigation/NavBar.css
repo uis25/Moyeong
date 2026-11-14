@@ -1,0 +1,15 @@
+nav{background:var(--color-surface);border-bottom:1px solid var(--color-line);position:sticky;top:0;z-index:var(--z-nav)}
+nav .w{display:flex;align-items:center;gap:var(--space-20);height:56px;overflow-x:auto}
+nav b{color:var(--color-primary);font-size:var(--font-size-20);line-height:var(--line-height-28);font-weight:var(--font-weight-extrabold);white-space:nowrap}
+nav a{color:var(--color-text-sub);text-decoration:none;white-space:nowrap;font-size:var(--font-size-16);line-height:var(--line-height-24);min-height:var(--size-touch);display:inline-flex;align-items:center}
+nav a.on{color:var(--color-text);font-weight:var(--font-weight-bold)}
+/* 정책 현황 숫자 */
+nav .stats{display:flex;align-items:center;gap:var(--space-4);margin-left:auto;flex:none;padding-left:var(--space-16)}
+nav .stats button{display:flex;flex-direction:row-reverse;align-items:baseline;gap:var(--space-4);min-height:var(--size-touch);padding:var(--space-10) var(--space-8);border:0;border-radius:var(--radius-12);background:none;font:inherit;font-size:var(--font-size-12);line-height:var(--line-height-16);color:var(--color-text-sub);white-space:nowrap;cursor:pointer}
+nav .stats button:hover,nav .stats button:focus-visible{background:var(--color-primary-soft);color:var(--color-primary)}
+nav .stats strong{font-size:var(--font-size-16);line-height:var(--line-height-24);font-weight:var(--font-weight-bold);color:var(--color-text)}
+/* 로고 (nav a.on 보다 뒤에 있어야 함) */
+nav a.brand{color:var(--color-primary);font-size:var(--font-size-20);line-height:var(--line-height-28);font-weight:var(--font-weight-extrabold)}
+nav a.brand.on{color:var(--color-primary)}
+.brandlogo{display:block;height:36px;width:auto}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .brandlogo{background:var(--color-logo-bg);border-radius:var(--radius-8);padding:var(--space-4) var(--space-8);height:28px;box-sizing:content-box}}

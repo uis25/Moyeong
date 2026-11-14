@@ -1,0 +1,18 @@
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--color-surface);border-bottom:1px solid var(--color-line);box-shadow:var(--shadow-mega);animation:o .15s}
+.mega[hidden]{display:none}
+.mega .w{display:grid;grid-template-columns:minmax(200px,260px) 1fr;gap:var(--space-40);padding-top:var(--space-32);padding-bottom:var(--space-36);height:auto;overflow:visible;align-items:start}
+.mega .intro .ico{width:72px;height:72px;border-radius:var(--radius-circle);background:var(--color-primary-soft);color:var(--color-primary);display:grid;place-items:center;margin-bottom:var(--space-16)}
+.mega .intro h3{font-size:var(--font-size-28);line-height:var(--line-height-36);font-weight:var(--font-weight-extrabold);margin:0 0 var(--space-12);letter-spacing:var(--letter-spacing-tight);display:block}
+.mega .intro p{margin:0;color:var(--color-text-sub);font-size:var(--font-size-16);line-height:var(--line-height-24);display:block}
+.mega .sub{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-8) var(--space-24)}
+.mega .intro{display:block;text-align:left;background:none;border:0;border-radius:var(--radius-16);padding:var(--space-16);margin:-16px;color:inherit;font:inherit;cursor:pointer}
+.mega .intro:hover,.mega .intro:focus-visible{background:var(--color-primary-soft)}
+.mega .intro:hover .ico,.mega .intro:focus-visible .ico{background:var(--color-surface)}
+.mega .intro .go{display:inline-block;margin-top:var(--space-16);color:var(--color-primary);font-size:var(--font-size-16);line-height:var(--line-height-24);font-weight:var(--font-weight-bold)}
+.mega .sub .si{text-align:left;padding:var(--space-16);color:inherit;display:flex;flex-direction:column;justify-content:flex-start;align-self:start}
+.mega .sub b{display:block;font-size:var(--font-size-16);line-height:var(--line-height-24);font-weight:var(--font-weight-bold);color:var(--color-text);white-space:normal;margin-bottom:var(--space-8)}
+.mega .sub span{color:var(--color-text-sub);font-size:var(--font-size-16);line-height:var(--line-height-24)}
+/* 안내판이 열린 메뉴 링크 (NavBar.css의 nav a.on 보다 뒤에 있어야 함) */
+nav a[aria-expanded=true]{color:var(--color-primary)}
+@media(max-width:900px){.mega .w{grid-template-columns:1fr;gap:var(--space-16)}.mega .sub{grid-template-columns:repeat(2,1fr)}}
+@media(hover:none){.mega{display:none!important}}

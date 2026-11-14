@@ -98,7 +98,7 @@ async function state(p) {
     // 화면에 보이는 모든 요소(+ ::before/::after)의 계산된 스타일. React의 #root 래퍼는 제외
     const els = [...document.body.querySelectorAll("*")].filter(e => e.id !== "root" && e.tagName !== "SCRIPT" && e.getClientRects().length);
     // margin은 auto일 때 Chrome이 계산 시점에 따라 다른 값을 돌려주므로 제외하고, 대신 실제 위치·크기(rect)를 비교
-    const props = [...getComputedStyle(document.body)].filter(n => !n.startsWith("margin"));
+    const props = [...getComputedStyle(document.body)].filter(n => !n.startsWith("margin") && !n.startsWith("--")); // CSS 변수 이름 자체는 화면과 무관하므로 제외 (실제 적용된 값만 비교)
     const css = (cs) => props.map(n => n + ":" + cs.getPropertyValue(n)).join(";");
     const rect = e => { const r = e.getBoundingClientRect(); return `rect:${r.x.toFixed(2)},${r.y.toFixed(2)},${r.width.toFixed(2)},${r.height.toFixed(2)};` };
     window.__cs = els.map(e => { let t = rect(e) + css(getComputedStyle(e)); for (const ps of ["::before", "::after"]) { const c = getComputedStyle(e, ps); if (c.content != "none" && c.content != "normal") t += "|" + ps + "|" + css(c) } return t });

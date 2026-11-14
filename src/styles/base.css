@@ -1,0 +1,17 @@
+/* 기본 요소 스타일 */
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--color-bg);color:var(--color-text);font:var(--font-size-16)/var(--line-height-24) var(--font-sans);overflow-x:clip}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--color-focus);outline-offset:4px}
+input[type=checkbox]{width:20px;height:20px;margin:0;flex:none;accent-color:var(--color-primary)}
+h1{font-size:clamp(28px,5vw,40px);line-height:clamp(36px,6vw,48px);margin:0 0 var(--space-24);font-weight:var(--font-weight-extrabold);letter-spacing:var(--letter-spacing-tight)}
+label{display:block;font-size:var(--font-size-12);line-height:var(--line-height-16);color:var(--color-text-sub);margin-bottom:var(--space-4)}
+footer{padding:var(--space-32) 0 var(--space-56);color:var(--color-text-sub);font-size:var(--font-size-12);line-height:var(--line-height-20)}
+/* 레이아웃 폭 */
+.w{max-width:1040px;margin:0 auto;padding:0 var(--space-20)}
+/* 펼침 애니메이션 (정책 상세, 메뉴 안내판) */
+@keyframes o{from{opacity:0;transform:translateY(-4px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

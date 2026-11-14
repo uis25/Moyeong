@@ -1,0 +1,2 @@
+/* 배지 + 정책명 한 줄 (달력 일정, 관심 정책 목록) */
+.alr{display:flex;gap:var(--space-12);align-items:center;flex-wrap:wrap;padding:var(--space-4) 0;font-size:var(--font-size-16);line-height:var(--line-height-24)}

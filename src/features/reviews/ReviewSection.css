@@ -1,0 +1,13 @@
+.rv{background:var(--color-bg);border-radius:var(--radius-16);padding:var(--space-16);margin-top:var(--space-16)}
+.rv h4{margin:0 0 var(--space-12)!important;font-size:var(--font-size-16)!important}
+.big{font-size:var(--font-size-28);line-height:var(--line-height-36);font-weight:var(--font-weight-extrabold);margin-right:var(--space-8)}
+/* 키워드 비율 막대 */
+.bar2{display:grid;grid-template-columns:minmax(96px,152px) 1fr auto;gap:var(--space-12);align-items:center;margin:var(--space-8) 0;font-size:var(--font-size-16);line-height:var(--line-height-24)}
+.bt{height:12px;background:var(--color-primary-soft);border-radius:var(--radius-pill);overflow:hidden}
+.bt i{display:block;height:100%;background:var(--color-chart);border-radius:var(--radius-pill);transition:width .3s}
+.bn{color:var(--color-text-sub);font-size:var(--font-size-12);line-height:var(--line-height-16);white-space:nowrap}
+.rvs{background:var(--color-surface);border-radius:var(--radius-12);padding:var(--space-12) var(--space-16);margin:var(--space-12) 0;font-size:var(--font-size-16);line-height:var(--line-height-24)}
+.st{color:var(--amber-500);letter-spacing:var(--letter-spacing-stars)}
+.rv .chips{margin-top:var(--space-8)}
+.rv textarea{width:100%;min-height:96px;padding:var(--space-12);border:1.5px solid var(--color-line);border-radius:var(--radius-12);background:var(--color-surface);resize:vertical}
+.rv .btn{margin:var(--space-8) var(--space-8) 0 0}

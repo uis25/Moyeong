@@ -1,0 +1,12 @@
+/* .home h2 는 NowSection.css의 .hhead h2 보다 뒤에 있어야 함 */
+.home h2{font-size:var(--font-size-22);margin:0 0 var(--space-6);letter-spacing:var(--letter-spacing-snug)}
+.home .hint{color:var(--color-text-sub);font-size:var(--font-size-15);margin:0 0 var(--space-18)}
+.hsec{margin:var(--space-8) 0 var(--space-40)}
+/* 캐릭터 이미지 */
+.scw{position:relative;height:0;pointer-events:none}
+.scw .sc{position:absolute;bottom:0;height:auto;user-select:none}
+.hs-how{margin-top:var(--space-56)}
+.hhow{display:flex;align-items:flex-end;gap:var(--space-8)}
+.sc-g2{width:48px;height:auto;margin:-36px 0 -4px;flex:none}
+.sc-p{right:32px;width:168px;bottom:-2px!important}
+@media(max-width:720px){.hs-how{margin-top:var(--space-48)}.sc-p{width:84px;right:0}.hs-menu .hint{padding-right:var(--space-88)}}

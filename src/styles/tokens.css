@@ -1,0 +1,155 @@
+/*
+ * 디자인 토큰. 원본 CSS에 쓰인 값을 그대로 옮겼습니다 (값을 바꾸면 원본과 달라집니다).
+ * - 테마 색상: 다크 모드에서 바뀌는 색 (아래 @media 블록에서 다크 값 지정)
+ * - 팔레트: 특정 요소에만 쓰는 고정 색. 다크 모드 전용 색도 원본처럼 각 컴포넌트의 다크 규칙에서 직접 씁니다.
+ */
+:root {
+  /* 테마 색상 */
+  --color-primary: #176B4D;
+  --color-primary-soft: #E8F3ED;
+  --color-bg: #F7F9F8;
+  --color-surface: #fff;
+  --color-text: #191F28;
+  --color-text-sub: #6B7684;
+  --color-line: #E5E8EB;
+  --color-band: #FFF0DC;
+  --color-focus: var(--orange-500);
+  --color-danger: var(--orange-700);
+
+  /* 팔레트 (주황·호박·빨강 계열) */
+  --orange-500: #F97316;
+  --amber-100: #FEF3C7;
+  --orange-100: #FFEDD5;
+  --red-100: #FEE2E2;
+  --amber-300: #FCD34D;
+  --orange-300: #FDBA74;
+  --red-300: #FCA5A5;
+  --amber-500: #F59E0B;
+  --orange-700: #C2410C;
+  --amber-800: #92400E;
+  --orange-800: #9A3412;
+  --red-800: #991B1B;
+
+  /* 팔레트 (그 밖의 고정 색) */
+  --color-chart: #5BB98C;
+  --color-cream: #FCE8C3;
+  --color-cream-light: #FFF1D6;
+  --color-footer-bg: #EEF1EF;
+  --color-footer-bg-dark: #161C1A;
+  --color-footer-text: #4E5968;
+  --color-ink: #191F28;
+  --color-ink-dark: #0E1A15;
+  --color-ink-sub: #6B7684;
+  --color-ivory: #F6F1DC;
+  --color-logo-bg: #FBF0DE;
+  --color-mint: #DDEFDF;
+  --color-primary-deep: #12553D;
+  --color-rust: #A8521C;
+  --color-sand: #EFD9AE;
+  --color-sand-light: #EAD9B8;
+  --color-tangerine: #D9620A;
+  --color-tangerine-light: #FFA552;
+  --color-white: #fff;
+  --color-highlight-line: rgba(194,65,12,.35);
+  --color-highlight-line-dark: rgba(253,186,116,.4);
+  --color-pillar-bg: rgba(255,255,255,.85);
+  --color-pillar-bg-dark: rgba(255,255,255,.05);
+
+  /* 다크 모드 전용 고정 색 */
+  --color-dark-amber-bg: #3a2f12;
+  --color-dark-eyebrow: #F0A868;
+  --color-dark-goal-from: #3A2E1A;
+  --color-dark-goal-line: #4A3D28;
+  --color-dark-goal-to: #1C3328;
+  --color-dark-goal-via: #2A2A1F;
+  --color-dark-orange-bg: #3a2412;
+  --color-dark-orange-bg-strong: #4A2A12;
+  --color-dark-pillar-line: #3A3226;
+  --color-dark-red-bg: #3b1a1a;
+
+  /* 글꼴 */
+  --font-sans: Pretendard,"Noto Sans KR",system-ui,sans-serif;
+  --font-size-12: 12px;
+  --font-size-13: 13px;
+  --font-size-14: 14px;
+  --font-size-15: 15px;
+  --font-size-16: 16px;
+  --font-size-17: 17px;
+  --font-size-20: 20px;
+  --font-size-22: 22px;
+  --font-size-28: 28px;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-semibold: 600;
+  --line-height-16: 16px;
+  --line-height-20: 20px;
+  --line-height-24: 24px;
+  --line-height-28: 28px;
+  --line-height-36: 36px;
+  --line-height-44: 44px;
+  --line-height-none: 1;
+  --line-height-normal: 1.55;
+  --line-height-relaxed: 1.6;
+  --line-height-snug: 1.45;
+  --letter-spacing-snug: -.01em;
+  --letter-spacing-stars: 1px;
+  --letter-spacing-tight: -.02em;
+  --letter-spacing-wide: .04em;
+
+  /* 간격 */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-18: 18px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-36: 36px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-56: 56px;
+  --space-72: 72px;
+  --space-88: 88px;
+
+  /* 모서리 둥글기 */
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-14: 14px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-circle: 50%;
+  --radius-pill: 100px;
+
+  /* 그림자 */
+  --shadow-cta: 0 8px 20px -10px rgba(23,107,77,.6);
+  --shadow-mega: 0 18px 30px -18px rgba(0,0,0,.18);
+  --shadow-popover: 0 16px 40px -12px rgba(0,0,0,.25);
+
+  /* 크기 */
+  --size-touch: 44px;
+
+  /* 쌓임 순서 */
+  --z-dropdown: 30;
+  --z-nav: 5;
+  --z-popover: 20;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --color-primary: #4DC08F;
+    --color-primary-soft: #1f3a2f;
+    --color-bg: #121715;
+    --color-surface: #1b2220;
+    --color-text: #EEF2F0;
+    --color-text-sub: #9AA6A1;
+    --color-line: #2d3733;
+    --color-band: #33261A;
+  }
+}

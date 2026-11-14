@@ -1,0 +1,13 @@
+.goal{background:linear-gradient(135deg,var(--color-cream) 0%,var(--color-ivory) 50%,var(--color-mint) 100%);border:1px solid var(--color-sand);color:var(--color-text);border-radius:var(--radius-20);padding:var(--space-28) var(--space-28) var(--space-24);margin:var(--space-8) 0 var(--space-40)}
+.goal .eyebrow{font-size:var(--font-size-13);font-weight:var(--font-weight-bold);color:var(--color-rust);letter-spacing:var(--letter-spacing-wide)}
+.goal p.lead{font-size:clamp(19px,2.6vw,24px);font-weight:var(--font-weight-extrabold);line-height:var(--line-height-snug);margin:var(--space-8) 0 var(--space-20);letter-spacing:var(--letter-spacing-snug)}
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--space-12)}
+.pillar{background:var(--color-pillar-bg);border:1px solid var(--color-sand-light);border-radius:var(--radius-14);padding:var(--space-16)}
+.pillar b{display:block;font-size:var(--font-size-16);margin-bottom:var(--space-4);color:var(--color-primary)}
+.pillar span{font-size:var(--font-size-14);color:var(--color-text-sub);line-height:var(--line-height-normal)}
+/* 홈 화면 안에서의 모양 */
+body[data-view=home] #homeview .goal{margin:var(--space-40) 0 0;background:none;border:0;border-radius:0;padding:0}
+body[data-view=home] #homeview .goal p.lead{font-size:var(--font-size-20);line-height:var(--line-height-28);margin:var(--space-8) 0 var(--space-16)}
+body[data-view=home] #homeview .pillar{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-20);padding:var(--space-20)}
+body[data-view=home] #homeview .pillar span{font-size:var(--font-size-16);line-height:var(--line-height-24);word-break:keep-all}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) body[data-view=home] #homeview .pillar{background:var(--color-surface);border-color:var(--color-line)}:root:not([data-theme=light]) .goal{background:linear-gradient(135deg,var(--color-dark-goal-from) 0%,var(--color-dark-goal-via) 50%,var(--color-dark-goal-to) 100%);border-color:var(--color-dark-goal-line);color:var(--color-text)}:root:not([data-theme=light]) .goal .eyebrow{color:var(--color-dark-eyebrow)}:root:not([data-theme=light]) .pillar{background:var(--color-pillar-bg-dark);border-color:var(--color-dark-pillar-line)}}

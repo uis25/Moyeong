@@ -1,0 +1,6 @@
+.hsec h2+.steps{margin-top:var(--space-16)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--space-12);counter-reset:st;padding:0;margin:0;list-style:none}
+.steps li{background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-20);padding:var(--space-20)}
+.steps li::before{counter-increment:st;content:counter(st);display:inline-grid;place-items:center;width:30px;height:30px;border-radius:var(--radius-circle);background:var(--color-primary);color:var(--color-white);font-weight:var(--font-weight-extrabold);font-size:var(--font-size-14);margin-bottom:var(--space-12)}
+.steps b{display:block;font-size:var(--font-size-16);margin-bottom:var(--space-4)}
+.steps span{color:var(--color-text-sub);font-size:var(--font-size-14);line-height:var(--line-height-relaxed)}

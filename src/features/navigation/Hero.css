@@ -1,0 +1,16 @@
+.hero{padding:var(--space-56) 0 var(--space-28)}
+body[data-view=home] .hero{background:var(--color-band);color:var(--color-text);padding-bottom:var(--space-32);margin-bottom:var(--space-40)}
+body[data-view=home] .hero h1{color:var(--color-text)}
+.tang{color:var(--color-tangerine)}
+/* 홈 CTA 버튼 (Button.css의 .btn 보다 뒤에 있어야 함) */
+.herocta{display:none;margin-top:var(--space-8);min-height:56px;padding:0 var(--space-12) 0 var(--space-28);border-radius:var(--radius-pill);gap:var(--space-12)}
+body[data-view=home] .herocta{display:inline-flex;background:var(--color-primary);color:var(--color-white);box-shadow:var(--shadow-cta)}
+.herocta .arr{display:grid;place-items:center;width:32px;height:32px;border-radius:var(--radius-circle);background:var(--color-white);color:var(--color-primary);font-size:var(--font-size-16);line-height:var(--line-height-none)}
+body[data-view=home] .herocta:focus-visible{outline:3px solid var(--color-primary);outline-offset:3px}
+/* 캐릭터 */
+.hero .w{position:relative}
+.herochar{display:none;position:absolute;right:20px;bottom:0;width:180px;height:auto}
+body[data-view=home] .herochar,body[data-view=list] .herochar{display:block}
+body[data-view=list] .herochar{width:128px;bottom:-12px}
+@media(max-width:720px){.herochar{position:static;width:112px;margin:-24px 0 var(--space-12) auto}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .tang{color:var(--color-tangerine-light)}:root:not([data-theme=light]) body[data-view=home] .herocta{color:var(--color-ink-dark)}:root:not([data-theme=light]) .herocta .arr{background:var(--color-ink-dark)}}

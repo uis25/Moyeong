@@ -1,0 +1,45 @@
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-4);margin-top:var(--space-12)}
+.cal .dow{text-align:center;font-size:var(--font-size-12);line-height:var(--line-height-16);color:var(--color-text-sub)}
+.dcell{position:relative;min-width:0}
+.dcell>.day{height:100%}
+/* 날짜 팝업 */
+.calpop{position:absolute;z-index:var(--z-popover);top:calc(100% + 8px);left:50%;transform:translateX(-50%);width:400px;max-width:calc(100vw - 48px);background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-16);padding:var(--space-16) var(--space-20);box-shadow:var(--shadow-popover);text-align:left;cursor:default}
+.calpop::before{content:"";position:absolute;top:-8px;left:calc(50% - 8px);width:14px;height:14px;background:var(--color-surface);border-left:1px solid var(--color-line);border-top:1px solid var(--color-line);transform:rotate(45deg)}
+.calpop.al{left:0;transform:none}
+.calpop.al::before{left:calc(var(--cw,66px) - 8px)}
+.calpop.ar{left:auto;right:0;transform:none}
+.calpop.ar::before{left:auto;right:calc(var(--cw,66px) - 8px)}
+.calpop .cph{display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);margin:-4px -8px var(--space-4) 0}
+.calpop .cph b{font-size:var(--font-size-16);line-height:var(--line-height-24)}
+.calpop .cpx{flex:none;width:var(--size-touch);height:var(--size-touch);display:grid;place-items:center;border:0;border-radius:var(--radius-circle);background:none;color:var(--color-text-sub);cursor:pointer}
+.calpop .cpx:hover,.calpop .cpx:focus-visible{background:var(--color-primary-soft);color:var(--color-text)}
+.calpop .alr{flex-wrap:nowrap;align-items:flex-start;padding:0}
+.calpop .badge{flex:none;white-space:nowrap;margin-top:var(--space-10);min-width:96px;text-align:center}
+.calpop .lnk{padding:var(--space-10) 0;line-height:var(--line-height-24);word-break:keep-all}
+@media(max-width:720px){.calpop,.calpop.al,.calpop.ar{width:calc(700% + 24px);max-width:none;left:calc(var(--c) * (-100% - 4px));right:auto;transform:none}.calpop::before,.calpop.al::before,.calpop.ar::before{left:calc(var(--c) * ((100% - 24px) / 7 + 4px) + (100% - 24px) / 14 - 7px);right:auto}}
+/* 날짜 칸 */
+.day{min-height:104px;border:0;border-top:1px solid var(--color-line);border-radius:0;padding:var(--space-8) var(--space-4);font-size:var(--font-size-12);line-height:var(--line-height-16);display:flex;flex-direction:column;gap:var(--space-4);min-width:0}
+.day .dn{display:grid;place-items:center;width:28px;height:28px;border-radius:var(--radius-circle);font-size:var(--font-size-16);line-height:var(--line-height-24)}
+.day .cnt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 범례 */
+.calleg{display:flex;gap:var(--space-20);align-items:center;flex-wrap:wrap;margin-top:var(--space-16);font-size:var(--font-size-16);line-height:var(--line-height-24);color:var(--color-text)}
+.calleg span{display:inline-flex;align-items:center;gap:var(--space-8)}
+.lg{width:20px;height:20px;border-radius:var(--radius-6);background:var(--orange-100);border:1px solid var(--color-danger)}
+.lg.s{background:var(--color-primary-soft);border-color:var(--color-primary)}
+/* 이번 달 일정 목록 */
+#calview .clist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--space-24)}
+#calview .clist .alr{padding:0;flex-wrap:nowrap;min-width:0}
+#calview .clist .lnk{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;line-height:var(--line-height-44)}
+#calview .calmore{margin-top:var(--space-4)}
+#calview .clist .badge{flex:none;white-space:nowrap}
+.calleg .meta{font-size:var(--font-size-12);line-height:var(--line-height-16)}
+@media(max-width:720px){#calview .clist{grid-template-columns:1fr}#calview .clist .lnk{white-space:normal;word-break:keep-all;line-height:var(--line-height-24);padding:var(--space-10) 0}#calview .clist .alr{align-items:flex-start}#calview .clist .badge{margin-top:var(--space-10)}}
+.day.today{font-weight:var(--font-weight-bold)}
+.day.today .dn{background:var(--color-primary);color:var(--color-white)}
+.cnt{background:var(--orange-100);color:var(--color-danger);border-radius:var(--radius-8);font-size:var(--font-size-12);line-height:var(--line-height-16);padding:0 var(--space-4);font-weight:var(--font-weight-bold)}
+.cnt.s{background:var(--color-primary-soft);color:var(--color-primary)}
+button.day{background:none;color:inherit;text-align:left;width:100%;cursor:pointer;font:inherit;font-size:var(--font-size-12)}
+button.day:hover{background:var(--color-primary-soft)}
+button.day[aria-pressed=true]{background:var(--color-primary-soft);box-shadow:inset 0 2px 0 var(--color-primary)}
+@media(max-width:480px){.day{min-height:72px;padding:var(--space-4) var(--space-2)}.day .dn{width:24px;height:24px;font-size:var(--font-size-12)}.day .cnt{padding:0 var(--space-2);white-space:normal;word-break:break-all;text-overflow:clip}.cnt{font-size:var(--font-size-12)}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .cnt{background:var(--color-dark-orange-bg);color:var(--orange-300)}:root:not([data-theme=light]) .cnt.s{background:var(--color-primary-soft);color:var(--color-primary)}}
