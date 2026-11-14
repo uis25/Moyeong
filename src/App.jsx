@@ -10,22 +10,20 @@ import NavBar from "./features/navigation/NavBar";
 import Hero from "./features/navigation/Hero";
 import SiteFooter from "./features/navigation/SiteFooter";
 import HomeView from "./features/home/HomeView";
+import ReviewSection from "./features/reviews/ReviewSection";
+import useReviews from "./features/reviews/useReviews";
 import useDocumentEvent from "./hooks/useDocumentEvent";
 import { CATEGORIES, STATUSES, EXPERIENCE_LABELS, PAGE_SIZE } from "./constants/conditions";
-import { REVIEW_KEYWORDS, STAR_FILTERS, REVIEW_SORTS, REVIEWS_PER_PAGE } from "./constants/reviews";
 import { RECORD_STATUSES } from "./constants/records";
 import { OFFICIAL_SOURCES } from "./constants/sources";
 import { TODAY, pad2, ymd } from "./utils/date";
 import { dday, status, deadlineMeta, shortCategory } from "./utils/policyStatus";
 import { relatedWords, findSnippet, buildSuggestions } from "./utils/search";
 import { pageNumbers } from "./utils/policyList";
-import { reviewStats, reviewSummary, stars, sortReviews } from "./utils/reviewStats";
 import { mix, highlight, highlightParts, markInput } from "./utils/text";
-import { saveReview, removeReview } from "./services/reviewsService";
 
 const LBL = { ok: ["기본 조건 일치", "ok"], unknown: ["추가 확인 필요", "chk"], no: ["조건 불일치", "no"] }, CL = { ok: "일치", unknown: "확인 필요", no: "불일치" };
 function range(a, b, u) { return a == null && b == null ? "명시 없음" : (a ?? "") + "~" + (b ?? "") + u }
-const RV_DEFAULT = { open: false, fs: 0, fk: "", sort: "new", n: REVIEWS_PER_PAGE, star: 0, kw: [], draft: "", write: false, msg: "", busy: false };
 
 export default function App({ initial }) {
   return <AppProvider initial={initial}>
@@ -39,9 +37,8 @@ export default function App({ initial }) {
 function LegacyMain() {
   const { policies, userId: UID, conditions: S, favorites: fav, documents: docs, records: REC, view, openId: open, queryInput: qInput, query: Q, sort, hideMismatch: hide, hideClosed: hideend, tick,
     QX, QRE, list: L, page, totalPages: tp, refs, bump, search, changeQueryInput, clearQuery, changeCondition, toggleFilter: toggleChip, removeTag, resetAll, changeSort, changeHideMismatch, changeHideClosed, changePage,
-    toggleOpen, toggleFavorite: toggleFav, toggleRecord: toggleRec, toggleDocument: toggleDoc, sortGo, goTarget: goHome, openPolicy, initialReviews } = useApp();
-  const [UR, setUR] = useState(initialReviews);
-  const [RV, setRV] = useState({});
+    toggleOpen, toggleFavorite: toggleFav, toggleRecord: toggleRec, toggleDocument: toggleDoc, sortGo, goTarget: goHome, openPolicy } = useApp();
+  const reviews = useReviews();
   const [calY, setCalY] = useState(TODAY.getFullYear());
   const [calM, setCalM] = useState(TODAY.getMonth());
   const [calSel, setCalSel] = useState(null);
@@ -100,31 +97,6 @@ function LegacyMain() {
     if (e.key == "Escape" && view == "cal" && calSel) { flushSync(() => setCalSel(null)); const b = dayRefs.current[calSel]; if (b) b.focus() }
   });
 
-  /* ---- 후기 ---- */
-  const rs = pid => RV[pid] || RV_DEFAULT;
-  const revs = pid => UR.filter(r => r.policyId == pid);
-  async function rvAct(a, pid, v) {
-    const s = { ...rs(pid), msg: "" }; let nUR = null, save = null;
-    if (a == "open") s.open = !s.open; else if (a == "write") { s.write = !s.write; const m = revs(pid).find(r => r.authorId == UID); if (s.write && m && !s.draft) { s.star = m.rating; s.kw = [...m.keywords]; s.draft = m.content } } else if (a == "fs") { s.fs = +v; s.n = REVIEWS_PER_PAGE } else if (a == "fk") { s.fk = s.fk == v ? "" : v; s.n = REVIEWS_PER_PAGE } else if (a == "sort") { s.sort = v; s.n = REVIEWS_PER_PAGE } else if (a == "more") s.n += REVIEWS_PER_PAGE; else if (a == "star") s.star = +v;
-    else if (a == "kw") { s.kw = s.kw.includes(v) ? s.kw.filter(k => k != v) : s.kw.length < 3 ? [...s.kw, v] : s.kw }
-    else if (a == "submit") {
-      const c = s.draft.trim();
-      if (!s.star || c.length < 5) s.msg = "별점과 5자 이상의 후기를 입력해 주십시오.";
-      else {
-        const d = ymd(new Date()), ex = UR.find(r => r.policyId == pid && r.authorId == UID), rec = { rating: s.star, keywords: s.kw, content: c, createdAt: ex ? ex.createdAt : d, updatedAt: d };
-        const review = ex ? { ...ex, ...rec } : { id: "r" + Date.now(), policyId: pid, authorId: UID, ...rec };
-        nUR = ex ? UR.map(r => r === ex ? review : r) : [...UR, review]; save = () => saveReview(review);
-        Object.assign(s, { write: false, star: 0, kw: [], draft: "", open: true, fs: 0, fk: "", sort: "new", n: REVIEWS_PER_PAGE, msg: ex ? "후기가 수정되었습니다. 통계와 요약이 갱신되었습니다." : "후기가 등록되었습니다. 통계와 요약이 갱신되었습니다." })
-      }
-    }
-    else if (a == "del") { nUR = UR.filter(r => !(r.policyId == pid && r.authorId == UID)); s.msg = "후기를 삭제했습니다."; save = () => removeReview(pid, UID) }
-    if (nUR) setUR(nUR);
-    setRV(m => ({ ...m, [pid]: s })); bump();
-    if (save) await save();
-  }
-  const setDraft = (pid, v) => setRV(m => ({ ...m, [pid]: { ...(m[pid] || RV_DEFAULT), draft: v } }));
-
-
   /* ================= 렌더 ================= */
   const tags = []; if (S.age !== "") tags.push(["age", `만 ${S.age}세`]); if (S.region) tags.push(["region", S.region]); if (S.exp !== "") tags.push(["exp", EXPERIENCE_LABELS[S.exp]]); if (S.biz !== "") tags.push(["biz", S.biz === "1" ? "경영체 등록" : "경영체 미등록"]); S.cats.forEach(c => tags.push(["cats:" + c, c])); S.sts.forEach(c => tags.push(["sts:" + c, c]));
 
@@ -135,41 +107,6 @@ function LegacyMain() {
     nums.forEach(n => { if (n - prev > 1) out.push(<span key={"g" + n} className="gap" aria-hidden="true">…</span>); out.push(<button key={n} data-page={n} aria-current={n == page ? "page" : undefined} aria-label={`${n}페이지`} onClick={e => onPage(e, n, false)}>{n}</button>); prev = n });
     out.push(<button key="next" data-page={page + 1} aria-disabled={page == tp} aria-label="다음 페이지" onClick={e => onPage(e, page + 1, page == tp)}><span className="pt">다음 </span>›</button>);
     return out;
-  }
-
-  function rvSection(p) {
-    const s = rs(p.id), all = revs(p.id), st = reviewStats(all), mine = all.find(r => r.authorId == UID);
-    let list = null;
-    if (s.open && st.n) {
-      list = all.filter(r => (!s.fs || r.rating == s.fs) && (!s.fk || r.keywords.includes(s.fk)));
-      sortReviews(list, s.sort);
-    }
-    const act = (a, v) => () => rvAct(a, p.id, v);
-    return <section className="rv"><h4>선배가 해보니</h4>
-      {!st.n ? <div className="meta">등록된 후기 없음. 첫 후기를 남겨 주십시오.</div>
-        : <><div><span className="big">{`★ ${st.avg.toFixed(1)}`}</span><span className="meta">{`/ 5 · 후기 ${st.n}개`}</span></div>
-          {st.top.map(x => <div className="bar2" key={x.k}><span>{x.k}</span><span className="bt" role="img" aria-label={`${Math.round(x.c / st.n * 100)}%`}><i style={{ width: `${x.c / st.n * 100}%` }}></i></span><span className="bn">{`${x.c}명 · ${Math.round(x.c / st.n * 100)}%`}</span></div>)}
-          <div className="rvs">{reviewSummary(st)}<div className="note">키워드 빈도 기반 요약 (AI 요약 아님). 후기는 사용자 경험이며 공식 정책 정보가 아닙니다.</div></div></>}
-      <button className="btn s" aria-expanded={s.open} hidden={!st.n} onClick={act("open")}>{s.open ? "접기" : "자세히 보기"}</button>
-      <button className="btn s" onClick={act("write")}>{s.write ? "작성 취소" : mine ? "내 후기 수정" : "후기 쓰기"}</button>
-      {mine ? <button className="btn s" disabled={s.busy} onClick={act("del")}>내 후기 삭제</button> : null}
-      {s.msg ? <div className="note" role="status">{s.msg}</div> : null}
-      {s.write ? <div className="rvi"><b>별점</b><div className="chips">{[1, 2, 3, 4, 5].map(n => <button key={n} className="chip" aria-pressed={s.star == n} onClick={act("star", n)}>{`${n}점`}</button>)}</div>
-        <div style={{ marginTop: 12 }}><b>키워드</b> <span className="meta">(최대 3개)</span></div>
-        <div className="chips">{REVIEW_KEYWORDS.map(k => <button key={k} className="chip" aria-pressed={s.kw.includes(k)} onClick={act("kw", k)}>{k}</button>)}</div>
-        <label htmlFor={`d-${p.id}`} style={{ marginTop: 12 }}>후기 (5자 이상)</label><textarea id={`d-${p.id}`} maxLength={500} value={s.draft} onChange={e => setDraft(p.id, e.target.value)}></textarea>
-        <button className="btn" disabled={s.busy} onClick={act("submit")}>{s.busy ? "저장 중…" : "후기 등록"}</button>
-        <div className="note">공유 저장소에 연결되지 않아 후기는 이 기기(localStorage)에만 저장되고, 다른 사람에게는 보이지 않습니다. 같은 기기에서 다시 등록하면 기존 후기가 수정됩니다.</div></div> : null}
-      {list ? <>
-        <div className="chips" role="group" aria-label="별점 필터">{STAR_FILTERS.map(n => <button key={n} className="chip" aria-pressed={s.fs == n} onClick={act("fs", n)}>{n ? n + "점" : "전체"}</button>)}</div>
-        <div className="chips" role="group" aria-label="키워드 필터">{REVIEW_KEYWORDS.map(k => <button key={k} className="chip" aria-pressed={s.fk == k} onClick={act("fk", k)}>{k}</button>)}</div>
-        <div className="chips" role="group" aria-label="정렬">{REVIEW_SORTS.map(x => <button key={x[0]} className="chip" aria-pressed={s.sort == x[0]} onClick={act("sort", x[0])}>{x[1]}</button>)}</div>
-        <div className="meta" style={{ marginTop: 12 }} aria-live="polite">{`후기 ${list.length}개`}</div>
-        {list.length ? list.slice(0, s.n).map(r => <div className="rvi" key={r.id}><span className="st" role="img" aria-label={`별점 ${r.rating}점`}>{stars(r.rating)}</span>{" "}<span className="meta">{r.createdAt + (r.updatedAt != r.createdAt ? " (수정 " + r.updatedAt + ")" : "")}</span>{r.authorId == UID ? <>{" "}<span className="badge ok">내 후기</span></> : null}<div className="chips" style={{ marginTop: 8 }}>{r.keywords.map(k => <span className="tag" key={k}>{k}</span>)}</div><p>{r.content}</p></div>)
-          : <div className="empty">조건에 맞는 후기 없음. 필터를 바꿔 보십시오.</div>}
-        {list.length > s.n ? <button className="btn s" onClick={act("more")}>{`후기 더 보기 (${list.length - s.n}개 남음)`}</button> : null}
-      </> : null}
-    </section>
   }
 
   function recBlock(p) {
@@ -191,7 +128,7 @@ function LegacyMain() {
           <table className="cmp"><tbody>{x.e.checks.map(c => <tr key={c[0]}><td>{c[0]}</td><td><span className={`badge ${LBL[c[1]][1]}`}>{CL[c[1]]}</span></td></tr>)}</tbody></table>
           <div className="note">{`정책 기준: 연령 ${range(p.minAge, p.maxAge, "세")} · 영농경력 ${range(p.minFarmingYears, p.maxFarmingYears, "년")} · 지역 ${p.eligibleRegions.join(", ") || "명시 없음"} · 농업경영체 등록 ${p.requiresBusinessRegistration == null ? "명시 없음" : p.requiresBusinessRegistration ? "필요" : "불필요"}. 이 비교는 공식 자격 심사가 아니며, 다른 필수 자격이 있을 수 있습니다.`}</div></div></div>
         <h4>준비 서류 체크리스트</h4>{p.requiredDocuments.length ? <ul>{p.requiredDocuments.map((t, i) => <li className="d" key={i}><label className="doc"><input type="checkbox" checked={!!docs[p.id + ":" + i]} onChange={e => toggleDoc(p.id, i, e.target.checked)} />{t}</label></li>)}</ul> : <div className="meta">확인된 서류 없음. 공식 공고를 확인하십시오.</div>}
-        {rvSection(p)}{recBlock(p)}<h4>참고 링크</h4>
+        <ReviewSection policy={p} reviews={reviews} />{recBlock(p)}<h4>참고 링크</h4>
         <div className="links">{extLink(p.applicationUrl, "공식 신청 페이지", p.applicationUrl ? "" : "s")}{extLink(p.officialNoticeUrl, "공식 공고문", "s")}</div>
         <div className="note">{p.applicationUrl || p.officialNoticeUrl ? "외부 사이트로 이동합니다." : "확인된 공식 링크가 없습니다. 아래 참고 링크나 해당 기관 사이트에서 공고를 확인해 주십시오."}</div>{(p.references || []).length ? <ul className="refs">{p.references.map((r, i) => <li key={i}><a href={r.url} target="_blank" rel="noopener noreferrer">{`${r.label} ↗`}</a></li>)}</ul> : null}<div className="note">{`출처: ${p.sourceName} · 확인일 ${p.lastVerifiedAt || "미확인"}`}</div></div> : null}
     </article>
