@@ -2,3 +2,6 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# 비교 스크립트 결과물 (스크린샷·차이 이미지)
+compare-results
