@@ -66,6 +66,8 @@ const desktop = [
   ["cal-day", async p => { await p.locator("#calview .dcell button.day").first().click(); await settle(p, 300) }],
   ["cal-esc", async p => { await p.keyboard.press("Escape"); await settle(p, 300) }],
   ["cal-day-last", async p => { await p.locator("#calview .dcell button.day").last().click(); await settle(p, 300) }],
+  ["cal-close-btn", async p => { await p.click("#calview .calpop .cpx"); await settle(p, 300) }],
+  ["cal-reopen", async p => { await p.locator("#calview .dcell button.day").last().click(); await settle(p, 300) }],
   ["cal-outside", async p => { await p.mouse.click(5, 600); await settle(p, 300) }],
   ["cal-prev", async p => { await p.click("[aria-label='이전 달']"); await settle(p, 300) }],
   ["cal-more", async p => { const b = p.locator(".calmore"); if (await b.count()) await b.click(); await settle(p, 300) }],
