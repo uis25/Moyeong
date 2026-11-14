@@ -1,7 +1,7 @@
 // 원본(original/original/index.html)과 React 앱을 같은 조작으로 비교하는 스크립트
 // 사용법: npm run compare            → 전체 시나리오
 //         npm run compare -- mobile  → 한 묶음만 (desktop, desktop-full, dark, tablet, mobile, mobile-full)
-// 단계마다 스크린샷 픽셀 · 화면 텍스트 · 스크롤 위치 · localStorage 를 비교하고,
+// 단계마다 스크린샷 픽셀 · 보이는 모든 요소의 계산된 스타일 · 화면 텍스트 · 스크롤 위치 · localStorage 를 비교하고,
 // 다른 단계가 있으면 compare-results/ 에 원본/React/차이 이미지를 저장합니다.
 import { chromium } from "playwright";
 import { createServer } from "vite";
@@ -95,8 +95,25 @@ async function state(p) {
   return p.evaluate(() => {
     const a = document.activeElement;
     const desc = a && a !== document.body ? a.tagName + "#" + (a.id || "") + "." + (a.className || "") + ":" + (a.textContent || "").trim().slice(0, 30) : "BODY";
-    return { y: Math.round(window.scrollY), focus: desc, text: document.body.innerText, view: document.body.dataset.view, ls: Object.fromEntries(Object.keys(localStorage).filter(k => k != "bmy_uid").sort().map(k => [k, localStorage.getItem(k).replace(/"id":"r\d+"/g,"\"id\":\"R\"").replace(/"authorId":"u\w+"/g,"\"authorId\":\"U\"")])) };
+    // 화면에 보이는 모든 요소(+ ::before/::after)의 계산된 스타일. React의 #root 래퍼는 제외
+    const els = [...document.body.querySelectorAll("*")].filter(e => e.id !== "root" && e.tagName !== "SCRIPT" && e.getClientRects().length);
+    // margin은 auto일 때 Chrome이 계산 시점에 따라 다른 값을 돌려주므로 제외하고, 대신 실제 위치·크기(rect)를 비교
+    const props = [...getComputedStyle(document.body)].filter(n => !n.startsWith("margin"));
+    const css = (cs) => props.map(n => n + ":" + cs.getPropertyValue(n)).join(";");
+    const rect = e => { const r = e.getBoundingClientRect(); return `rect:${r.x.toFixed(2)},${r.y.toFixed(2)},${r.width.toFixed(2)},${r.height.toFixed(2)};` };
+    window.__cs = els.map(e => { let t = rect(e) + css(getComputedStyle(e)); for (const ps of ["::before", "::after"]) { const c = getComputedStyle(e, ps); if (c.content != "none" && c.content != "normal") t += "|" + ps + "|" + css(c) } return t });
+    const hash = t => { let h = 5381; for (let i = 0; i < t.length; i++) h = (h * 33 + t.charCodeAt(i)) | 0; return h };
+    const sigs = els.map(e => e.tagName + (typeof e.className == "string" && e.className.trim() ? "." + e.className.trim().split(/\s+/).join(".") : ""));
+    return { y: Math.round(window.scrollY), focus: desc, text: document.body.innerText, view: document.body.dataset.view, sigs, hashes: window.__cs.map(hash), ls: Object.fromEntries(Object.keys(localStorage).filter(k => k != "bmy_uid").sort().map(k => [k, localStorage.getItem(k).replace(/"id":"r\d+"/g, "\"id\":\"R\"").replace(/"authorId":"u\w+"/g,"\"authorId\":\"U\"")])) };
   });
+}
+// 계산된 스타일 비교: 요소 순서가 다르거나 스타일이 다른 첫 요소를 찾아 다른 속성을 알려줌
+async function styleDiff(pages, o, r) {
+  if (o.sigs.join() != r.sigs.join()) { const i = o.sigs.findIndex((x, j) => x != r.sigs[j]); return `elements differ @${i}: ${o.sigs[i]} vs ${r.sigs[i]} (count ${o.sigs.length} vs ${r.sigs.length})` }
+  const i = o.hashes.findIndex((x, j) => x != r.hashes[j]); if (i < 0) return null;
+  const [a, b] = await Promise.all([pages.orig.evaluate(i => window.__cs[i], i), pages.react.evaluate(i => window.__cs[i], i)]);
+  const A = a.split(";"), B = b.split(";"), d = A.map((x, j) => x != B[j] ? x + " ≠ " + B[j] : null).filter(Boolean);
+  return `style differs @${i} ${o.sigs[i]} (${o.hashes.filter((x, j) => x != r.hashes[j]).length}개 요소): ${d.slice(0, 4).join(" , ")}`;
 }
 function diff(a, b, name) {
   const A = PNG.sync.read(a), B = PNG.sync.read(b);
@@ -124,6 +141,7 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     if (o.y != r.y) probs.push(`scrollY ${o.y} vs ${r.y}`);
     if (o.view != r.view) probs.push(`view ${o.view} vs ${r.view}`);
     if (o.text != r.text) probs.push("innerText differs");
+    const sd = await styleDiff(pages, o, r); if (sd) probs.push(sd);
     if (JSON.stringify(o.ls) != JSON.stringify(r.ls)) probs.push("localStorage differs " + JSON.stringify(o.ls).slice(0, 300) + " || " + JSON.stringify(r.ls).slice(0, 300));
     if (o.focus != r.focus) { if (o.focus == "BODY") focusNotes.push(label + " " + name + " → " + r.focus); else probs.push(`focus [${o.focus}] vs [${r.focus}]`) }
     if (probs.length) bad++;
