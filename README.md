@@ -23,6 +23,8 @@ npm run compare -- mobile         # 한 묶음만: desktop, desktop-full, dark, 
 ```
 
 - 비교 항목: 스크린샷 픽셀, 보이는 모든 요소의 계산된 스타일과 위치·크기, 화면 글자, 스크롤 위치, localStorage
+- 브라우저의 스크롤 고정(scroll anchoring)은 양쪽 모두 끄고 비교합니다 (docs/differences.md 9번).
+- 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터도 현재 `src/constants/policies.json`으로 맞춘 뒤 비교합니다 (코드 동작만 비교).
 - 실패한 묶음은 자동으로 한 번 더 실행하고, 두 번 모두 다를 때만 차이로 보고합니다 (브라우저 타이밍에 따른 일시적 차이 제외).
 - 결과: 마지막 줄에 `✓ 모든 단계가 원본과 같습니다.` 또는 `✗ N단계가 다릅니다.`
 - 다른 단계가 있으면 `compare-results/` 폴더에 원본·React·차이(빨간 표시) 이미지가 저장됩니다.

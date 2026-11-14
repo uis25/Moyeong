@@ -22,12 +22,7 @@ function conditionTags(c) {
 export default function ConditionsPanel() {
   const { view, conditions: c, refs, changeCondition, toggleFilter, removeTag, resetAll } = useApp();
   const tags = conditionTags(c);
-  const onChange = field => e => {
-    const v = e.target.value;
-    /* 원본 render()는 매번 입력칸 값을 다시 써서, 숫자가 아닌 입력(예: "1e")은 지워졌습니다 */
-    if (field == "age") e.target.value = v;
-    changeCondition(field, v);
-  };
+  const onChange = field => e => changeCondition(field, e.target.value);
 
   return <Panel id="top-panel" ref={refs.topPanel} hidden={view != "list"}>
     <div className="phead"><h2>내 조건</h2><p className="hint">나이·지역·경력·경영체 등록 여부를 입력하면 기본 조건이 맞는 정책을 먼저 보여드립니다. 조건은 이 기기에만 저장됩니다.</p></div>

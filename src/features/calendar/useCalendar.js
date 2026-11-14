@@ -1,8 +1,8 @@
 /*
  * 신청 달력 상태: 보고 있는 달 · 선택한 날짜(팝업) · 마감일 미정 목록 모두 보기.
- * 다른 화면에 다녀와도 유지됩니다 (원본과 같은 동작).
+ * 보고 있는 달과 모두 보기는 다른 화면에 다녀와도 유지되고, 열려 있던 날짜 팝업은 다른 화면으로 가면 닫힙니다.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import useDocumentEvent from "../../hooks/useDocumentEvent";
 import { TODAY } from "../../utils/date";
@@ -29,10 +29,11 @@ export default function useCalendar() {
     const b = dayRefs.current[k]; if (b) b.focus(opts);
   }
 
-  /* 팝업 바깥을 누르면 닫기. 원본에서 이 리스너보다 먼저 실행돼 화면을 바꾸던 버튼(#herocta, [data-sortgo], #navcond, #navfav)은
-     누른 시점에 이미 달력 화면이 아니게 되어 팝업이 닫히지 않았으므로 똑같이 제외합니다. */
+  // 다른 화면으로 가면 날짜 팝업 닫기 (원본은 열린 채로 남아 달력으로 돌아오면 다시 보였음)
+  useEffect(() => { if (view != "cal") setSelected(null) }, [view]);
+  // 팝업 바깥을 누르면 닫기
   useDocumentEvent("click", e => {
-    if (view == "cal" && selected && !e.target.closest(".calpop,[data-calday],[data-calnav]") && !e.target.closest("#herocta,[data-sortgo],#navcond,#navfav")) setSelected(null);
+    if (view == "cal" && selected && !e.target.closest(".calpop,[data-calday],[data-calnav]")) setSelected(null);
   }, true);
   useDocumentEvent("keydown", e => { if (e.key == "Escape" && view == "cal" && selected) close({}) });
 

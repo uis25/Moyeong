@@ -12,6 +12,5 @@ export default function ReviewForm({ policyId, ui, act, setDraft }) {
     <label htmlFor={`d-${policyId}`} style={{ marginTop: 12 }}>후기 (5자 이상)</label>
     <textarea id={`d-${policyId}`} maxLength={500} value={ui.draft} onChange={e => setDraft(e.target.value)}></textarea>
     <Button disabled={ui.busy} onClick={() => act("submit")}>{ui.busy ? "저장 중…" : "후기 등록"}</Button>
-    <div className="note">공유 저장소에 연결되지 않아 후기는 이 기기(localStorage)에만 저장되고, 다른 사람에게는 보이지 않습니다. 같은 기기에서 다시 등록하면 기존 후기가 수정됩니다.</div>
   </div>;
 }

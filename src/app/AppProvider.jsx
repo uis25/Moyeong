@@ -32,10 +32,6 @@ export default function AppProvider({ initial, children }) {
   const [sort, setSort] = useState("fit");
   const [hideMismatch, setHideMismatch] = useState(() => hasProfile(initial.conditions));
   const [hideClosed, setHideClosed] = useState(false);
-  /* 원본은 render()마다 목록 innerHTML을 새로 만들어 열린 상세(.ex)의 등장 애니메이션이 다시 재생됐습니다.
-     같은 효과를 내기 위해 render()가 불리던 시점마다 tick을 올리고 상세 영역의 key로 씁니다. */
-  const [tick, setTick] = useState(0);
-  const bump = () => setTick(t => t + 1);
   const mega = useMegaMenu();
 
   // 스크롤·포커스 이동 대상
@@ -70,16 +66,16 @@ export default function AppProvider({ initial, children }) {
   /* ---- 검색 ---- */
   /** 검색어 확정 (Enter·검색 버튼·자동완성 선택) */
   function search(value) {
-    flushSync(() => { setQueryInput(value); setQuery(value.trim()); setPage(1); if (view != "list") setView("list"); bump() });
+    flushSync(() => { setQueryInput(value); setQuery(value.trim()); setPage(1); if (view != "list") setView("list") });
     scrollToListTop();
   }
   /** 검색창 입력 (확정 전). 다 지우면 확정된 검색어도 지움 */
-  function changeQueryInput(v) { setQueryInput(v); if (!v.trim() && query) setQuery(""); setPage(1); bump() }
-  async function clearQuery() { setPage(1); setQueryInput(""); setQuery(""); bump(); await saveConditions(conditions) }
+  function changeQueryInput(v) { setQueryInput(v); if (!v.trim() && query) setQuery(""); setPage(1) }
+  async function clearQuery() { setPage(1); setQueryInput(""); setQuery(""); await saveConditions(conditions) }
 
   /* ---- 내 조건 ---- */
   async function updateConditions(next, { syncHide = false } = {}) {
-    setPage(1); setConditions(next); if (syncHide) setHideMismatch(hasProfile(next)); bump();
+    setPage(1); setConditions(next); if (syncHide) setHideMismatch(hasProfile(next));
     await saveConditions(next);
   }
   const changeCondition = (field, value) => updateConditions({ ...conditions, [field]: value }, { syncHide: true });
@@ -91,28 +87,28 @@ export default function AppProvider({ initial, children }) {
   }
   async function resetAll() {
     const next = { ...EMPTY_CONDITIONS, cats: [], sts: [] };
-    setPage(1); setConditions(next); setQueryInput(""); setQuery(""); setHideMismatch(false); bump();
+    setPage(1); setConditions(next); setQueryInput(""); setQuery(""); setHideMismatch(false);
     await saveConditions(next);
   }
 
   /* ---- 목록 보기 옵션 ---- */
-  const changeSort = v => { setSort(v); setPage(1); bump() };
-  const changeHideMismatch = v => { setHideMismatch(v); setPage(1); bump() };
-  const changeHideClosed = v => { setHideClosed(v); setPage(1); bump() };
-  function changePage(n) { flushSync(() => { setPage(n); bump() }); scrollToListTop() }
+  const changeSort = v => { setSort(v); setPage(1) };
+  const changeHideMismatch = v => { setHideMismatch(v); setPage(1) };
+  const changeHideClosed = v => { setHideClosed(v); setPage(1) };
+  function changePage(n) { flushSync(() => { setPage(n) }); scrollToListTop() }
 
   /* ---- 정책별 저장 데이터 ---- */
-  async function toggleOpen(id) { setOpenId(o => o == id ? null : id); bump(); await saveConditions(conditions) }
+  async function toggleOpen(id) { setOpenId(o => o == id ? null : id); await saveConditions(conditions) }
   async function toggleFavorite(id) {
     const on = favorites.includes(id);
-    setFavorites(on ? favorites.filter(x => x != id) : [...favorites, id]); bump();
+    setFavorites(on ? favorites.filter(x => x != id) : [...favorites, id]);
     await (on ? removeFavorite(id) : saveFavorite(id)); await saveConditions(conditions);
   }
   /** 같은 상태를 다시 누르면 기록 삭제 */
   async function toggleRecord(id, value) {
     const remove = records[id] == value, next = { ...records };
     if (remove) delete next[id]; else next[id] = value;
-    setRecords(next); bump();
+    setRecords(next);
     await (remove ? removeRecord(id) : saveRecord(id, value));
   }
   async function toggleDocument(id, index, checked) {
@@ -122,11 +118,11 @@ export default function AppProvider({ initial, children }) {
 
   /* ---- 화면 이동 ---- */
   /** 홈 '나에게 맞는 정책 모아보기' 버튼 */
-  function heroCta() { goView("list", () => { setSort("fit"); setPage(1); bump() }); window.scrollTo({ top: 0, behavior: "smooth" }) }
+  function heroCta() { goView("list", () => { setSort("fit"); setPage(1) }); window.scrollTo({ top: 0, behavior: "smooth" }) }
   /** 상단 숫자(모집 중·마감 임박) · 홈 '전체 정책 모아보기': 목록으로 가서 정렬 변경 */
   function sortGo(v) {
     mega.hideMega(true);
-    flushSync(() => { if (view != "list") setView("list"); if (v) setSort(v); setPage(1); bump() });
+    flushSync(() => { if (view != "list") setView("list"); if (v) setSort(v); setPage(1) });
     scrollToListTop();
   }
   /** 내 조건 설정으로 이동 */
@@ -139,7 +135,7 @@ export default function AppProvider({ initial, children }) {
   /** 정책명을 누르면 목록으로 가서 필터를 풀고 해당 카드를 펼침 */
   async function openPolicy(id) {
     const next = { ...conditions, cats: [], sts: [] };
-    goView("list", () => { setOpenId(id); setJump(true); setConditions(next); setQueryInput(""); setQuery(""); setHideMismatch(false); setHideClosed(false); bump() });
+    goView("list", () => { setOpenId(id); setJump(true); setConditions(next); setQueryInput(""); setQuery(""); setHideMismatch(false); setHideClosed(false) });
     const card = refs.cards.current[id];
     if (card) { card.scrollIntoView({ behavior: "smooth", block: "start" }); const b = refs.openButtons.current[id]; if (b) b.focus({ preventScroll: true }) }
     await saveConditions(next);
@@ -150,15 +146,15 @@ export default function AppProvider({ initial, children }) {
     if (["cal", "rec", "fav"].includes(g)) { goView(g); return }
     goView("list");
     if (g == "list") { window.scrollTo({ top: 0, behavior: "smooth" }); return }
-    if (g == "due") { flushSync(() => { setSort("due"); setPage(1); bump() }); refs.bar.current.scrollIntoView({ behavior: "smooth" }) }
+    if (g == "due") { flushSync(() => { setSort("due"); setPage(1) }); refs.bar.current.scrollIntoView({ behavior: "smooth" }) }
     else if (g == "q") refs.q.current.focus();
     else scrollTo(g == "srcs" ? refs.srcs.current : refs.topPanel.current, g == "cats" ? refs.cats.current.querySelector("button") : g == "sts" ? refs.sts.current.querySelector("button") : g == "cond" ? refs.age.current : null);
   }
 
   const value = {
-    policies, userId, initialReviews: initial.reviews, conditions, favorites, documents, records, view, openId, queryInput, query, sort, hideMismatch, hideClosed, tick,
+    policies, userId, initialReviews: initial.reviews, conditions, favorites, documents, records, view, openId, queryInput, query, sort, hideMismatch, hideClosed,
     QX, QRE, list, page: currentPage, totalPages, statuses, refs, mega,
-    bump, goView, scrollToListTop, search, changeQueryInput, clearQuery,
+    goView, scrollToListTop, search, changeQueryInput, clearQuery,
     changeCondition, toggleFilter, removeTag, resetAll, changeSort, changeHideMismatch, changeHideClosed, changePage,
     toggleOpen, toggleFavorite, toggleRecord, toggleDocument,
     heroCta, sortGo, goConditions, goTarget, openPolicy, megaGo,

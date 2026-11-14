@@ -14,7 +14,7 @@ const range = (a, b, unit) => a == null && b == null ? "명시 없음" : (a ?? "
 function OfficialLink({ url, label, variant }) {
   return url
     ? <Button as="a" variant={variant} href={url} target="_blank" rel="noopener">{`${label} ↗`}</Button>
-    : <Button as="a" variant={variant} aria-disabled="true" style={{ opacity: .45, pointerEvents: "none" }}>{`${label} ↗`}</Button>;
+    : <Button as="a" variant={variant} aria-disabled="true" style={{ opacity: "var(--opacity-disabled)", pointerEvents: "none" }}>{`${label} ↗`}</Button>;
 }
 
 export default function PolicyDetail({ item, reviews }) {
@@ -36,7 +36,6 @@ export default function PolicyDetail({ item, reviews }) {
     <ReviewSection policy={p} reviews={reviews} />
     <h4>신청 기록</h4>
     <div className="chips" role="group" aria-label="신청 기록"><RecordChips policyId={p.id} /></div>
-    <div className="note">직접 고르는 진행 상태 (다시 누르면 기록 삭제, 이 기기에만 저장)</div>
     <h4>참고 링크</h4>
     <div className="links">
       <OfficialLink url={p.applicationUrl} label="공식 신청 페이지" variant={p.applicationUrl ? "primary" : "soft"} />

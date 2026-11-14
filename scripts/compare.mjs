@@ -22,13 +22,43 @@ const BASE = server.resolvedUrls.local[0].replace(/\/$/, "");
 const URLS = { orig: BASE + "/original/original/index.html", react: BASE + "/" };
 const settle = (p, ms = 900) => p.waitForTimeout(ms);
 // 원본에서 의도적으로 바꾼 부분(docs/differences.md)은 원본 쪽에 같은 변경을 CSS로 적용한 뒤 비교
-const ORIGINAL_OVERRIDES = "";
+const ORIGINAL_OVERRIDES = [
+  ".upcoming{background:var(--g2);color:var(--g);opacity:.45}", // 접수 예정 배지 (흐린 초록)
+].join("\n");
 // 원본이 카드 HTML을 만드는 card() 함수를 감싸서 같은 변경을 적용 (요소 자체를 빼서 React와 같은 DOM으로 만듦)
-const ORIGINAL_SCRIPT = () => {
+// 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터(P)도 현재 policies.json으로 맞춘 뒤 비교 (코드 동작만 비교)
+const POLICIES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/constants/policies.json"), "utf8"));
+const ORIGINAL_SCRIPT = policies => {
+  P.splice(0, P.length, ...policies); // 원본 스크립트의 최상위 const P (배열 내용만 교체)
+  STS.splice(STS.indexOf("확인 필요"), 1); // 모집 상태 필터 칩에서 "확인 필요" 제거
+  MEGA.list[2].find(x => x[0] == "sts")[2] = "모집 중·마감 임박·접수 예정·마감 상태별 보기"; // 메뉴 안내판 문구도 같이
   const card = window.card;
-  // 정책 카드: 자격 판정 배지 제거, 모집 상태 배지는 "확인 필요"일 때만 제거
-  window.card = x => card(x).replace(/(<div class="top"><div>)<span class="badge [^"]*">[^<]*<\/span>(<span class="badge [^"]*">([^<]*)<\/span>)/,
-    (m, head, status, text) => head + (text.trim() == "확인 필요" ? "" : status));
+  window.card = x => card(x)
+    // 정책 카드: 자격 판정 배지(첫 번째 배지) 제거
+    .replace(/(<div class="top"><div>)<span class="badge [^"]*">[^<]*<\/span>/, "$1")
+    // 모집 상태 배지 색: 모집 중 초록 · 마감 임박 주황(그대로) · 접수 예정 흐린 초록 · 확인 필요 노랑 · 마감 회색
+    .replace(/(<div class="top"><div>)<span class="badge [^"]*">(([^ <]+(?: [^ <]+)?) [^<]*)<\/span>/, (m, head, text, st) =>
+      `${head}<span class="badge ${{ "모집 중": "ok", "마감 임박": "dd", "접수 예정": "upcoming", "확인 필요": "chk", "마감": "gr" }[st] || "gr"}">${text}</span>`)
+    // 공식 링크가 없으면 "공식 링크 없음" 대신 흐린 "공식 공고문 ↗" 버튼
+    .replace('<span class="btn s" aria-disabled="true" style="opacity:.45;cursor:default">공식 링크 없음</span>', '<a class="btn s" aria-disabled="true" style="opacity:.45;pointer-events:none">공식 공고문 ↗</a>');
+  // 목록 정렬: 모집 상태 순서(마감 임박·모집 중 → 접수 예정 → 확인 필요 → 마감) 추가.
+  // 원본 render() 안의 정렬 부분만 바꿔 같은 이름으로 다시 정의 (render를 부르는 다른 함수들도 새 render를 씀)
+  const SORT_OLD = 'L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;if(so=="due"){if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||b.e.score-a.e.score});';
+  const SORT_NEW = 'const O={"마감 임박":0,"모집 중":0,"접수 예정":1,"확인 필요":2,"마감":3};L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;const s=O[a.st]-O[b.st];if(so=="due"){if(s)return s;if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return s||(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||s||b.e.score-a.e.score});';
+  // 원본 함수의 일부 코드만 바꿔 같은 이름으로 다시 정의 (그 함수를 부르는 다른 코드도 새 함수를 씀)
+  const redefine = (name, from, to) => {
+    const src = window[name].toString();
+    if (!src.includes(from)) throw new Error(`원본 ${name}()에서 바꿀 코드를 찾지 못함`);
+    (0, eval)(`${name} = ` + src.replace(from, to));
+  };
+  redefine("render", SORT_OLD, SORT_NEW);
+  // 홈 '지금 확인할 정책' 배지 색을 카드와 같은 규칙으로
+  redefine("renderHome", '${x.st=="마감 임박"?"dd":x.st=="모집 중"?"ok":"gr"}', '${({"모집 중":"ok","마감 임박":"dd","접수 예정":"upcoming","확인 필요":"chk","마감":"gr"})[x.st]}');
+  // 후기 작성 폼 아래 저장 안내 문구, 신청 기록 아래 안내 문구 제거
+  redefine("rvSection", "<div class=\"note\">${RVMODE==\"shared\"?\"후기는 이 페이지를 여는 사람들과 공유됩니다. 작성자 이름은 표시되지 않습니다. 같은 계정으로 다시 등록하면 기존 후기가 수정됩니다.\":\"공유 저장소에 연결되지 않아 후기는 이 기기(localStorage)에만 저장되고, 다른 사람에게는 보이지 않습니다. 같은 기기에서 다시 등록하면 기존 후기가 수정됩니다.\"}</div>", "");
+  redefine("recBlock", '<div class="note">직접 고르는 진행 상태 (다시 누르면 기록 삭제, 이 기기에만 저장)</div>', "");
+  // 다른 화면으로 가면 달력 날짜 팝업 닫기
+  (0, eval)('{ const sv = setView; setView = function (v) { if (v != "cal") calSel = null; return sv(v) } }');
   window.render();
 };
 // 클릭 후 상세 영역 등장 애니메이션(0.2초)이 끝날 때까지 기다림 (연속 클릭 시 타이밍 차이 방지)
@@ -70,8 +100,10 @@ const desktop = [
   ["reset", async p => { await p.click("#reset"); await settle(p, 300) }],
   ["sort-due", async p => { await p.selectOption("#sort", "due"); await settle(p, 300) }],
   ["hideend", async p => { await p.check("#hideend"); await settle(p, 300) }],
-  ["page2", async p => { await p.click("#pager >> text=2"); await p.mouse.move(5, 890); await settle(p) }],
-  ["page-prev", async p => { await p.click("#pager [aria-label='이전 페이지']"); await p.mouse.move(5, 890); await settle(p) }],
+  // 쪽 번호가 생기도록 마감 정책 숨기기를 끈 뒤 이동 (정책 데이터가 바뀌어도 시나리오가 멈추지 않게, 버튼이 있을 때만 누름)
+  ["hideend-off", async p => { await p.uncheck("#hideend"); await settle(p, 300) }],
+  ["page2", async p => { const b = p.locator("#pager button[aria-label='2페이지']"); if (await b.count()) await b.click(); await p.mouse.move(5, 890); await settle(p) }],
+  ["page-prev", async p => { const b = p.locator("#pager [aria-label='이전 페이지'][aria-disabled='false']"); if (await b.count()) await b.click(); await p.mouse.move(5, 890); await settle(p) }],
   ["nav-cal", async p => { await p.click("#navcal"); await p.mouse.move(5, 890); await settle(p) }],
   ["cal-day", async p => { await p.locator("#calview .dcell button.day").first().click(); await settle(p, 300) }],
   ["cal-esc", async p => { await p.keyboard.press("Escape"); await settle(p, 300) }],
@@ -106,7 +138,7 @@ const mobile = [
   ["home-scroll", async p => { await p.evaluate(() => window.scrollTo(0, 900)); await settle(p, 300) }],
   ["menu-list", async p => { await p.click(".mitem >> text=정책 모아보기"); await settle(p) }],
   ["top", async p => { await p.evaluate(() => window.scrollTo(0, 0)); await settle(p, 300) }],
-  ["chip-sts", async p => { await p.click("#sts >> text=확인 필요"); await settle(p, 300) }],
+  ["chip-sts", async p => { await p.click('#sts >> text="마감"'); await settle(p, 300) }],
   ["open-card", async p => { await p.locator(".card").nth(0).locator("text=자세히 보기").first().click(); await settle(p) }],
   ["scroll-ex", async p => { await p.locator(".ex").first().scrollIntoViewIfNeeded(); await settle(p, 300) }],
   ["cal", async p => { await p.evaluate(() => window.scrollTo(0, 0)); await p.click("#navcal"); await settle(p) }],
@@ -154,7 +186,10 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     pages[k].on("pageerror", e => console.log(`[${label}/${k}] pageerror`, e.message));
     pages[k].on("console", m => { if (m.type() == "error" || m.type() == "warning") console.log(`[${label}/${k}] console.${m.type()}`, m.text().slice(0, 200)) });
     await pages[k].goto(URLS[k], { waitUntil: "networkidle" }); await pages[k].evaluate(() => document.fonts.ready);
-    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT) }
+    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT, POLICIES) }
+    // 브라우저의 스크롤 고정(scroll anchoring)은 양쪽 모두 끄고 비교.
+    // 원본은 화면을 다시 그릴 때마다 요소를 새로 만들어 이 기능이 거의 동작하지 않았고, React는 요소를 유지해 동작함 (docs/differences.md)
+    await pages[k].addStyleTag({ content: "*{overflow-anchor:none!important}" });
     await settle(pages[k], 500);
   }
   let bad = 0;

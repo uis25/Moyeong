@@ -1,6 +1,8 @@
-/* variant: ok(일치·모집 중) · chk(확인 필요) · no(불일치) · dd(마감 임박·마감) · gr(기타 상태) */
+/* variant: ok(일치·모집 중) · upcoming(접수 예정) · chk(확인 필요) · no(불일치) · dd(마감 임박) · gr(마감·기타 상태) */
 .badge{display:inline-block;font-size:var(--font-size-12);line-height:var(--line-height-16);font-weight:var(--font-weight-bold);padding:var(--space-4) var(--space-12);border-radius:var(--radius-pill);margin-right:var(--space-8)}
 .ok{background:var(--color-primary-soft);color:var(--color-primary)}
+/* 접수 예정: 모집 중과 같은 초록을 흐리게 (흐림 정도는 링크 없는 버튼과 같은 0.45) */
+.upcoming{background:var(--color-primary-soft);color:var(--color-primary);opacity:var(--opacity-disabled)}
 .chk{background:var(--amber-100);color:var(--amber-800)}
 .no{background:var(--red-100);color:var(--red-800)}
 .dd{background:var(--orange-100);color:var(--color-danger)}

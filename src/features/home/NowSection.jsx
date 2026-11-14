@@ -1,5 +1,5 @@
 // 홈: '지금 확인할 정책' 3개 (모집 중·접수 예정 우선, 없으면 최근 등록순)
-import Badge, { statusVariant } from "../../components/Badge";
+import Badge, { STATUS_VARIANT } from "../../components/Badge";
 import { dday, status } from "../../utils/policyStatus";
 import { useApp } from "../../app/AppContext";
 
@@ -18,7 +18,7 @@ export default function NowSection() {
     <div className="nowlist">{pick.map(({ p, st }) => {
       const d = p.applicationEnd && st != "마감" ? dday(p) : null;
       return <button key={p.id} className="nowc" onClick={() => openPolicy(p.id)}>
-        <span><Badge variant={statusVariant(st)}>{st + (d != null && st != "접수 예정" ? (d == 0 ? " D-day" : " D-" + d) : "")}</Badge></span>
+        <span><Badge variant={STATUS_VARIANT[st]}>{st + (d != null && st != "접수 예정" ? (d == 0 ? " D-day" : " D-" + d) : "")}</Badge></span>
         <b>{p.title}</b><span className="meta">{p.organization}</span>
       </button>;
     })}</div>

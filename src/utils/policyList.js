@@ -4,11 +4,16 @@ import { status } from "./policyStatus";
 import { queryScore } from "./search";
 
 const RANK = { ok: 0, unknown: 1, no: 2 };
+/** 모집 상태 순서 (작을수록 위). 원본은 "마감은 맨 뒤"만 있었고 나머지 상태는 구분하지 않았음 (docs/differences.md) */
+const STATUS_ORDER = { "마감 임박": 0, "모집 중": 0, "접수 예정": 1, "확인 필요": 2, "마감": 3 };
 const endTime = p => p.applicationEnd ? +new Date(p.applicationEnd) : Infinity;
 
 /**
  * 화면에 보여 줄 정책 목록 [{ p, e(판정), st(상태), qs(검색 점수) }]
  * 마감 정책은 항상 뒤로. sort: fit(나에게 맞는 순) · due(마감 임박순) · new(최신 등록순)
+ * - fit: 내 조건 일치도 → 검색 점수(검색어가 있을 때) → 모집 상태 순서 → 일치한 조건 수
+ *        (조건·검색어가 없으면 모두 동점이므로 모집 상태 순서대로 나옴)
+ * - due · new: 모집 상태 순서 → 마감일 / 등록일
  */
 export function buildPolicyList(policies, { profile, conditions, QX, hide, hideEnd, sort }) {
   let L = policies.map(p => ({ p, e: evaluate(p, profile), st: status(p), qs: 0 }))
@@ -17,9 +22,10 @@ export function buildPolicyList(policies, { profile, conditions, QX, hide, hideE
   if (hideEnd) L = L.filter(x => x.st != "마감");
   L.sort((a, b) => {
     const c = (a.st == "마감") - (b.st == "마감"); if (c) return c;
-    if (sort == "due") { if (a.st == "마감") return endTime(b.p) - endTime(a.p); return endTime(a.p) - endTime(b.p) }
-    if (sort == "new") return (b.p.reg || "").localeCompare(a.p.reg || "");
-    return RANK[a.e.overall] - RANK[b.e.overall] || (QX.length ? b.qs - a.qs : 0) || b.e.score - a.e.score
+    const s = STATUS_ORDER[a.st] - STATUS_ORDER[b.st];
+    if (sort == "due") { if (s) return s; if (a.st == "마감") return endTime(b.p) - endTime(a.p); return endTime(a.p) - endTime(b.p) }
+    if (sort == "new") return s || (b.p.reg || "").localeCompare(a.p.reg || "");
+    return RANK[a.e.overall] - RANK[b.e.overall] || (QX.length ? b.qs - a.qs : 0) || s || b.e.score - a.e.score
   });
   return L;
 }

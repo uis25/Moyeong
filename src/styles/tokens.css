@@ -135,6 +135,9 @@
   /* 크기 */
   --size-touch: 44px;
 
+  /* 흐림 (비활성·예정 표시) */
+  --opacity-disabled: .45;
+
   /* 쌓임 순서 */
   --z-dropdown: 30;
   --z-nav: 5;

@@ -383,8 +383,8 @@
       "교육",
       "컨설팅"
     ],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-04-06",
+    "applicationEnd": "2026-06-30",
     "description": "작목별 재배기술, 농업경영, 유통·마케팅 등 실무 중심 교육과 참여자 간 정보 공유·협력 네트워크를 지원하는 청년농업인 스터디그룹입니다. 2026년에는 신규 스터디그룹 1개소를 상반기까지 추가 모집했습니다. 모집 기간과 세부 자격은 공고문에서 확인하시기 바랍니다.",
     "eligibilityDetails": [],
     "requiredDocuments": [
@@ -394,7 +394,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/dongbu/notice/notice.htm?act=view&seq=59748",
     "applicationUrl": null,
     "sourceName": "제주특별자치도 농업기술원 동부농업기술센터",
-    "lastVerifiedAt": "2026-11-09",
+    "lastVerifiedAt": "2026-11-14",
     "references": [
       {
         "label": "뉴스서울: 제주도, 청년농업인 성장 지원 본격화",
@@ -602,8 +602,8 @@
     "supportType": [
       "교육"
     ],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-11-06",
+    "applicationEnd": "2026-11-27",
     "description": "2027학년도 제주농업마이스터대학 10기 신입생을 모집합니다. 농업기술원(11월 9일)과 서귀포농업기술센터(11월 10일)에 공고가 올라왔습니다. 모집 대상, 인원, 원서 접수 기간, 제출 서류는 공고 본문에 없고 첨부된 모집요강(PDF)과 입학원서(HWPX)에 있습니다. 문의: 기술지원조정과 농촌활력팀 064-760-7524",
     "eligibilityDetails": [
       "모집 대상과 자격은 첨부된 모집요강(PDF)에서 확인"
@@ -614,7 +614,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/agri/notice/notice.htm?act=view&seq=62195",
     "applicationUrl": null,
     "sourceName": "제주특별자치도농업기술원 공지사항",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [
       {
         "label": "서귀포농업기술센터: 2027학년도 제주농업마이스터대학 신입생(10기) 모집",
@@ -793,8 +793,8 @@
     "supportType": [
       "컨설팅"
     ],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-03-05",
+    "applicationEnd": "2026-03-20",
     "description": "청년농업인을 대상으로 한 맞춤형 현장컨설팅 참여자 모집입니다. 공고 제목에 '(마감)'이 표시돼 있어 모집은 끝났습니다. 지원 내용, 대상, 신청 기간은 공고 본문에 없고 첨부된 계획서(PDF·HWPX)에 있습니다. 센터 대표전화: 064-733-5959",
     "eligibilityDetails": [
       "대상과 지원 내용은 첨부된 계획서에서 확인"
@@ -803,7 +803,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/seogwipo/notice/notice.htm?act=view&seq=59511",
     "applicationUrl": null,
     "sourceName": "서귀포농업기술센터 공지사항",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [],
     "reg": "2026-03-05",
     "id": "jeju-seogwipo-youth-field-consulting-2026",
@@ -1096,8 +1096,8 @@
       "판로"
     ],
     "supportType": [],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-04-01",
+    "applicationEnd": "2026-05-11",
     "description": "고령화로 운영이 어려운 농촌체험휴양마을과 체험프로그램 기획 역량을 갖춘 청년을 연결해 농촌관광 콘텐츠를 함께 만드는 사업입니다. 2026년에 처음 도입됐고, 지방정부 추천을 받은 26개 마을이 참여를 신청했습니다. 청년 공모는 3월 31일 발표됐고 5월 29일 선정 청년·마을 협약식이 열렸습니다. 청년 신청 기간·자격·활동비와 제주 마을 포함 여부는 공고문에서 확인하시기 바랍니다.",
     "eligibilityDetails": [
       "농촌체험 프로그램 기획 등 역량을 갖춘 청년 (세부 자격은 공고문 확인)"
@@ -1106,7 +1106,7 @@
     "officialNoticeUrl": "https://www.mafra.go.kr/bbs/home/792/577460/artclView.do",
     "applicationUrl": null,
     "sourceName": "농림축산식품부 보도자료",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [
       {
         "label": "농림축산식품부: 청년과 농촌체험마을 협약식 (2026.5.29)",
@@ -1136,8 +1136,8 @@
       "교육",
       "컨설팅"
     ],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-01-28",
+    "applicationEnd": "2026-02-20",
     "description": "농촌 적응부터 영농창업까지 예비농업인에게 맞춤형 멘토링과 실전교육을 지원하는 시범사업입니다. 전국 200명을 선정하며, 신청서는 양식을 내려받아 선정 지역 시·군·구에 제출합니다. 신청 기간은 공식 공고문에서 확인하시기 바랍니다.",
     "eligibilityDetails": [
       "2026년 청년농업인 영농정착지원사업 선발자 중 비농업계 학교 출신 영농 미개시 예비농업인",
@@ -1147,7 +1147,7 @@
     "officialNoticeUrl": "https://www.mafra.go.kr/bbs/home/791/594056/download.do",
     "applicationUrl": null,
     "sourceName": "농림축산식품부 모집 홍보물",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [],
     "reg": "",
     "id": "mafra-pre-farmer-mentoring-pilot-2026",
@@ -1220,16 +1220,11 @@
       "귀농 요건·교육 이수 요건은 시행지침과 시청 공고에서 확인"
     ],
     "requiredDocuments": [],
-    "officialNoticeUrl": "https://www.gunsan.go.kr/_cms/board/eFileDownload/95/8495775/12616273787a543950c5d3c449bee9ef",
+    "officialNoticeUrl": null,
     "applicationUrl": null,
     "sourceName": "농림축산식품부 2026년 시행지침(군산시 게시본), 지자체 모집 보도",
-    "lastVerifiedAt": "2026-11-10",
-    "references": [
-      {
-        "label": "제이케이엔뉴스: 평창군 2026년 하반기 귀농 농업창업·주택구입 지원 (한도·금리)",
-        "url": "https://news.jkn.co.kr/post/928870"
-      }
-    ],
+    "lastVerifiedAt": "2026-11-14",
+    "references": [],
     "reg": "",
     "id": "mafra-return-farm-startup-housing-2026",
     "title": "귀농 농업창업 및 주택구입 지원사업 (2026)",
@@ -1907,7 +1902,7 @@
     "supportType": [
       "교육"
     ],
-    "applicationStart": null,
+    "applicationStart": "2026-03-13",
     "applicationEnd": null,
     "description": "농업과 체험관광을 연계한 농촌융복합 활성화 기초과정 교육생 모집입니다. 공고 제목에 '(마감)'이 표시돼 있어 모집은 끝났습니다. 대상·인원·일정은 공고 본문에 없고 첨부된 운영계획서에 있습니다. 같은 센터의 전문과정과 실무역량 강화 교육은 별도 카드로 정리돼 있습니다. 센터 대표전화: 064-733-5959",
     "eligibilityDetails": [
@@ -1917,7 +1912,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/seogwipo/notice/notice.htm?page=2&act=view&seq=59512",
     "applicationUrl": null,
     "sourceName": "서귀포농업기술센터 공지사항",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [],
     "reg": "2026-03-05",
     "id": "jeju-seogwipo-rural-convergence-basic-2026",
@@ -1940,8 +1935,8 @@
     "supportType": [
       "교육"
     ],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-02-09",
+    "applicationEnd": "2026-02-13",
     "description": "신규농업인을 위한 현장실습교육 추진계획입니다. 공고 제목에 '(마감)'이 표시돼 있어 모집은 끝났습니다. 대상·일정·신청 방법은 공고 본문에 없고 첨부 파일에 있습니다. 같은 센터의 신규농업인 기초 교육과 전문과정은 별도 카드로 정리돼 있습니다. 센터 대표전화: 064-733-5959",
     "eligibilityDetails": [
       "대상과 일정은 첨부 파일에서 확인"
@@ -1950,7 +1945,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/seogwipo/notice/notice.htm?page=2&act=view&seq=59384",
     "applicationUrl": null,
     "sourceName": "서귀포농업기술센터 공지사항",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [],
     "reg": "2026-02-04",
     "id": "jeju-seogwipo-new-farmer-field-practice-2026",
@@ -1969,8 +1964,8 @@
       "네트워크(지역사회 관계)"
     ],
     "supportType": [],
-    "applicationStart": null,
-    "applicationEnd": null,
+    "applicationStart": "2026-06-19",
+    "applicationEnd": "2026-07-03",
     "description": "서귀포농업기술센터에 게시된 제45회 제주특별자치도 4-H대상 후보자 추천 공고입니다. 공고 제목에 '(마감)'이 표시돼 있어 추천 접수는 끝났습니다. 추천 자격·시상 내용·기간은 공고 본문에 없고 첨부된 공고문에 있습니다.",
     "eligibilityDetails": [
       "추천 자격과 시상 내용은 첨부된 공고문에서 확인"
@@ -1979,7 +1974,7 @@
     "officialNoticeUrl": "https://agri.jeju.go.kr/seogwipo/notice/notice.htm?page=1&act=view&seq=61494",
     "applicationUrl": null,
     "sourceName": "서귀포농업기술센터 공지사항",
-    "lastVerifiedAt": "2026-11-10",
+    "lastVerifiedAt": "2026-11-14",
     "references": [],
     "reg": "2026-06-11",
     "id": "jeju-4h-award-45th-2026",

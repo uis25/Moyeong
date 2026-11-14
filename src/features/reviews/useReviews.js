@@ -11,7 +11,7 @@ import { saveReview, removeReview } from "../../services/reviewsService";
 const UI_DEFAULT = { open: false, fs: 0, fk: "", sort: "new", n: REVIEWS_PER_PAGE, star: 0, kw: [], draft: "", write: false, msg: "", busy: false };
 
 export default function useReviews() {
-  const { userId, initialReviews, bump } = useApp();
+  const { userId, initialReviews } = useApp();
   const [reviews, setReviews] = useState(initialReviews);
   const [ui, setUi] = useState({});
 
@@ -55,7 +55,7 @@ export default function useReviews() {
       s.msg = "후기를 삭제했습니다.";
     }
     if (next) setReviews(next);
-    setUi(m => ({ ...m, [pid]: s })); bump();
+    setUi(m => ({ ...m, [pid]: s }));
     if (save) await save();
   }
 
