@@ -1,117 +1,73 @@
 /*
- * 앱 화면 (기능별 분리 진행 중). 원본 index.html의 render()/innerHTML 방식을 React state + JSX로 옮긴 것입니다.
- * 저장·불러오기는 src/services 의 async 함수만 사용합니다.
+ * 앱 레이아웃. 공유 상태는 app/AppProvider, 화면 조각은 features/ 에 있습니다.
+ * LegacyMain: 아직 기능 폴더로 옮기지 않은 화면 (다음 단계에서 차례로 분리)
  */
-import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import brandLogo from "./assets/brand-logo.png";
-import heroCharacter from "./assets/hero-character.png";
-import footerLogo from "./assets/footer-logo.png";
 import CHG from "./assets/character-greeting.png";
 import CHP from "./assets/character-pointing.png";
+import AppProvider from "./app/AppProvider";
+import { useApp } from "./app/AppContext";
+import NavBar from "./features/navigation/NavBar";
+import Hero from "./features/navigation/Hero";
+import SiteFooter from "./features/navigation/SiteFooter";
 import Icon from "./components/Icon";
-import { CATEGORIES, STATUSES, EXPERIENCE_LABELS, EMPTY_CONDITIONS, PAGE_SIZE } from "./constants/conditions";
+import useDocumentEvent from "./hooks/useDocumentEvent";
+import { CATEGORIES, STATUSES, EXPERIENCE_LABELS, PAGE_SIZE } from "./constants/conditions";
 import { REVIEW_KEYWORDS, STAR_FILTERS, REVIEW_SORTS, REVIEWS_PER_PAGE } from "./constants/reviews";
 import { RECORD_STATUSES } from "./constants/records";
 import { OFFICIAL_SOURCES } from "./constants/sources";
-import { NAV_ITEMS, MEGA_MENU, HOME_STEPS, HOME_MENU, HOME_PILLARS } from "./constants/navigation";
+import { HOME_STEPS, HOME_MENU, HOME_PILLARS } from "./constants/navigation";
 import { TODAY, pad2, ymd } from "./utils/date";
 import { dday, status, deadlineMeta, shortCategory } from "./utils/policyStatus";
-import { toProfile, hasProfile } from "./utils/eligibility";
-import { buildQuery, relatedWords, findSnippet, buildSuggestions } from "./utils/search";
-import { buildPolicyList, pageNumbers } from "./utils/policyList";
+import { relatedWords, findSnippet, buildSuggestions } from "./utils/search";
+import { pageNumbers } from "./utils/policyList";
 import { reviewStats, reviewSummary, stars, sortReviews } from "./utils/reviewStats";
 import { mix, highlight, highlightParts, markInput } from "./utils/text";
-import { saveConditions } from "./services/conditionsService";
-import { saveFavorite, removeFavorite } from "./services/favoritesService";
-import { saveDocumentCheck } from "./services/documentsService";
-import { saveRecord, removeRecord } from "./services/recordsService";
 import { saveReview, removeReview } from "./services/reviewsService";
 
 const LBL = { ok: ["기본 조건 일치", "ok"], unknown: ["추가 확인 필요", "chk"], no: ["조건 불일치", "no"] }, CL = { ok: "일치", unknown: "확인 필요", no: "불일치" };
 function range(a, b, u) { return a == null && b == null ? "명시 없음" : (a ?? "") + "~" + (b ?? "") + u }
 const RV_DEFAULT = { open: false, fs: 0, fk: "", sort: "new", n: REVIEWS_PER_PAGE, star: 0, kw: [], draft: "", write: false, msg: "", busy: false };
-const NAV_VIEW = Object.fromEntries(NAV_ITEMS.filter(x => x[3]).map(x => [x[0], x[3]]));
-const canHover = window.matchMedia && matchMedia("(hover:hover)").matches;
 
 export default function App({ initial }) {
-  const policies = initial.policies, UID = initial.userId;
-  const [S, setS] = useState(initial.conditions);
-  const [fav, setFav] = useState(initial.favorites);
-  const [docs, setDocs] = useState(initial.documents);
-  const [REC, setREC] = useState(initial.records);
-  const [UR, setUR] = useState(initial.reviews);
+  return <AppProvider initial={initial}>
+    <NavBar />
+    <Hero />
+    <LegacyMain />
+    <SiteFooter />
+  </AppProvider>;
+}
+
+function LegacyMain() {
+  const { policies, userId: UID, conditions: S, favorites: fav, documents: docs, records: REC, view, openId: open, queryInput: qInput, query: Q, sort, hideMismatch: hide, hideClosed: hideend, tick,
+    QX, QRE, list: L, page, totalPages: tp, refs, bump, search, changeQueryInput, clearQuery, changeCondition, toggleFilter: toggleChip, removeTag, resetAll, changeSort, changeHideMismatch, changeHideClosed, changePage,
+    toggleOpen, toggleFavorite: toggleFav, toggleRecord: toggleRec, toggleDocument: toggleDoc, sortGo, goTarget: goHome, openPolicy, initialReviews } = useApp();
+  const [UR, setUR] = useState(initialReviews);
   const [RV, setRV] = useState({});
-  const [open, setOpen] = useState(null);
-  const [pg, setPg] = useState(1);
-  const [jump, setJump] = useState(false);
-  const [qInput, setQInput] = useState("");
-  const [Q, setQ] = useState("");
-  const [sort, setSort] = useState("fit");
-  const [hide, setHide] = useState(() => hasProfile(initial.conditions));
-  const [hideend, setHideend] = useState(false);
-  const [view, setView] = useState("home");
   const [calY, setCalY] = useState(TODAY.getFullYear());
   const [calM, setCalM] = useState(TODAY.getMonth());
   const [calSel, setCalSel] = useState(null);
   const [calAll, setCalAll] = useState(false);
   const [ac, setAc] = useState({ items: [], i: -1, mv: "" });
-  const [megaKey, setMegaKey] = useState(null);
-  /* 원본은 render()마다 목록 innerHTML을 새로 만들어 열린 상세(.ex)의 등장 애니메이션이 다시 재생됐습니다.
-     같은 효과를 내기 위해 render()가 불리던 시점마다 tick을 올리고 .ex의 key로 씁니다. */
-  const [tick, setTick] = useState(0);
-  const bump = () => setTick(t => t + 1);
-
-  const acT = useRef(null), megaT = useRef(null), megaKeyRef = useRef(null), qInputRef = useRef("");
-  const navRef = useRef(null), navLinks = useRef({}), qRef = useRef(null), ageRef = useRef(null), topPanelRef = useRef(null), srcsRef = useRef(null), barRef = useRef(null), listRef = useRef(null);
-  const cardRefs = useRef({}), openBtnRefs = useRef({}), dayRefs = useRef({}), cpxRef = useRef(null), catsRef = useRef(null), stsRef = useRef(null);
+  const acT = useRef(null), qInputRef = useRef(""), dayRefs = useRef({}), cpxRef = useRef(null);
   qInputRef.current = qInput;
-
-  const { QX, QRE } = buildQuery(Q);
-
-
-  /* ---- 목록 계산 (원본 render()의 계산 부분) ---- */
-  const L = buildPolicyList(policies, { profile: toProfile(S), conditions: S, QX, hide, hideEnd: hideend, sort });
-  /* 쪽 번호 보정: 원본처럼 보정된 값을 그대로 유지합니다 (렌더 중 setState 패턴) */
-  let page = pg;
-  if (jump && open) { const i = L.findIndex(x => x.p.id == open); if (i >= 0) page = Math.floor(i / PAGE_SIZE) + 1 }
-  const tp = Math.max(1, Math.ceil(L.length / PAGE_SIZE)); if (page > tp) page = tp; if (page < 1) page = 1;
-  if (page !== pg) setPg(page);
-  if (jump && open) setJump(false);
-
-  const allSt = policies.map(status);
   const syn = relatedWords(QX);
-
-  /* ---- 화면 전환 ---- */
-  useLayoutEffect(() => { document.body.dataset.view = view }, [view]);
-  useLayoutEffect(() => { window.scrollTo({ top: 0 }) }, []);
-  /* setView(v): 상태를 즉시 반영한 뒤, 목록이 아니면 맨 위로 이동 (원본 setView와 같은 순서) */
-  function goView(v, extra) {
-    flushSync(() => { setView(v); extra && extra() });
-    if (v != "list") window.scrollTo({ top: 0 });
-  }
-  const toListTop = () => { if (barRef.current) barRef.current.scrollIntoView({ behavior: "smooth", block: "start" }) };
-
-  /* ---- 메뉴 안내판 ---- */
-  function showMega(k) { clearTimeout(megaT.current); if (megaKeyRef.current === k) return; megaKeyRef.current = k; setMegaKey(k) }
-  function hideMega(now) { clearTimeout(megaT.current); const go = () => { megaKeyRef.current = null; setMegaKey(null) }; now ? go() : megaT.current = setTimeout(go, 180) }
+  const main = view == "list";
 
   /* ---- 자동완성 ---- */
   function acClose() { clearTimeout(acT.current); setAc({ items: [], i: -1, mv: "" }) }
   function acShow(items, i) { if (!items.length) { acClose(); return } setAc({ items, i, mv: qInputRef.current }) }
   const acOpen = ac.items.length > 0;
 
-  /* ---- 동작 ---- */
-  function doSearch(value = qInput) {
-    acClose(); flushSync(() => { setQ(value.trim()); setPg(1); if (view != "list") setView("list"); bump() });
-    toListTop();
-  }
-  function acPick(i) { const o = ac.items[i]; if (!o) return; setQInput(o.v); doSearch(o.v) }
+
+  function doSearch(value = qInput) { acClose(); search(value) }
+  function acPick(i) { const o = ac.items[i]; if (!o) return; doSearch(o.v) }
   function onQChange(e) {
-    const v = e.target.value; setQInput(v); clearTimeout(acT.current);
-    if (!v.trim()) { acClose(); if (Q) setQ("") }
+    const v = e.target.value; clearTimeout(acT.current);
+    if (!v.trim()) acClose();
     else acT.current = setTimeout(() => { acShow(buildSuggestions(v, policies), -1) }, 250);
-    setPg(1); bump();
+    changeQueryInput(v);
   }
   function onQKeyDown(e) {
     if (e.nativeEvent.isComposing) return; const isOpen = acOpen;
@@ -122,53 +78,12 @@ export default function App({ initial }) {
   }
   function onCondChange(field, e) {
     const v = e.target.value;
-    /* 원본 render()는 매번 입력칸 값을 S로 다시 써서, 숫자가 아닌 입력(예: "1e")은 지워졌습니다 */
+    /* 원본 render()는 매번 입력칸 값을 다시 써서, 숫자가 아닌 입력(예: "1e")은 지워졌습니다 */
     if (field == "age") e.target.value = v;
-    const nS = { ...S, [field]: v }; setPg(1); setS(nS); setHide(hasProfile(nS)); saveConditions(nS); bump();
+    changeCondition(field, v);
   }
-  function onHeroCta(e) { e.preventDefault(); goView("list", () => { setSort("fit"); setPg(1); bump() }); window.scrollTo({ top: 0, behavior: "smooth" }) }
-  function onSortGo(e, v) { e.preventDefault(); hideMega(true); flushSync(() => { if (view != "list") setView("list"); if (v) setSort(v); setPg(1); bump() }); toListTop() }
-  function onPage(e, n, disabled) { if (disabled) return; flushSync(() => { setPg(n); bump() }); toListTop() }
-  function toggleChip(key, v) { const a = S[key]; const nS = { ...S, [key]: a.includes(v) ? a.filter(i => i != v) : [...a, v] }; setPg(1); setS(nS); saveConditions(nS); bump() }
-  function removeTag(r) {
-    let nS; if (r.includes(":")) { const [k, v] = r.split(":"); nS = { ...S, [k]: S[k].filter(i => i != v) } } else nS = { ...S, [r]: "" };
-    setPg(1); setS(nS); setHide(hasProfile(nS)); saveConditions(nS); bump()
-  }
-  function resetAll() { const nS = { ...EMPTY_CONDITIONS, cats: [], sts: [] }; setPg(1); setS(nS); setQInput(""); setQ(""); setHide(false); saveConditions(nS); bump() }
-  function clearQuery() { setPg(1); setQInput(""); setQ(""); saveConditions(S); bump() }
-  function toggleOpen(id) { setOpen(o => o == id ? null : id); saveConditions(S); bump() }
-  async function toggleFav(id) { const on = fav.includes(id); setFav(on ? fav.filter(x => x != id) : [...fav, id]); bump(); await (on ? removeFavorite(id) : saveFavorite(id)); await saveConditions(S) }
-  async function toggleRec(id, v) { const n = { ...REC }, del = n[id] == v; if (del) delete n[id]; else n[id] = v; setREC(n); bump(); await (del ? removeRecord(id) : saveRecord(id, v)) }
-  async function toggleDoc(id, i, checked) { setDocs(d => ({ ...d, [id + ":" + i]: checked })); await saveDocumentCheck(id, i, checked) }
-  function goCond(e) {
-    e.preventDefault(); if (view != "list") goView("list");
-    topPanelRef.current.scrollIntoView({ behavior: "smooth" }); ageRef.current.focus({ preventScroll: true });
-  }
-  function goHome(g) { /* data-go */
-    if (g == "cond" || g == "srcs") { goView("list"); (g == "cond" ? topPanelRef : srcsRef).current.scrollIntoView({ behavior: "smooth" }); if (g == "cond") ageRef.current.focus({ preventScroll: true }) }
-    else goView(g)
-  }
-  /* data-cal: 정책명을 누르면 목록으로 가서 해당 카드를 펼침 */
-  function openPolicy(id) {
-    const nS = { ...S, cats: [], sts: [] };
-    goView("list", () => { setOpen(id); setJump(true); setS(nS); setQInput(""); setQ(""); setHide(false); setHideend(false); bump() });
-    saveConditions(nS);
-    const c = cardRefs.current[id]; if (c) { c.scrollIntoView({ behavior: "smooth", block: "start" }); const b = openBtnRefs.current[id]; if (b) b.focus({ preventScroll: true }) }
-  }
-  function onMegaGo(e, g) {
-    e.preventDefault(); hideMega(true);
-    if (["cal", "rec", "fav"].includes(g)) { goView(g); return }
-    goView("list");
-    if (g == "list") { window.scrollTo({ top: 0, behavior: "smooth" }); return }
-    if (g == "due") { flushSync(() => { setSort("due"); setPg(1); bump() }); barRef.current.scrollIntoView({ behavior: "smooth" }) }
-    else if (g == "q") { qRef.current.focus() }
-    else { const el = g == "srcs" ? srcsRef.current : topPanelRef.current; el.scrollIntoView({ behavior: "smooth" }); const f = g == "cats" ? catsRef.current.querySelector("button") : g == "sts" ? stsRef.current.querySelector("button") : g == "cond" ? ageRef.current : null; if (f) f.focus({ preventScroll: true }) }
-  }
-  function onNavClick(e, id) {
-    e.preventDefault();
-    if (id == "navcond") goCond(e); else goView(NAV_VIEW[id]);
-    hideMega(true);
-  }
+  function onSortGo(e, v) { e.preventDefault(); sortGo(v) }
+  function onPage(e, n, disabled) { if (disabled) return; changePage(n) }
 
   /* ---- 달력 ---- */
   function calNav(d0) { const d = new Date(calY, calM + d0, 1); setCalY(d.getFullYear()); setCalM(d.getMonth()); setCalSel(null) }
@@ -177,6 +92,16 @@ export default function App({ initial }) {
     const f = ns ? cpxRef.current : dayRefs.current[k]; if (f) f.focus({ preventScroll: true });
   }
   function calClose() { const k = calSel; flushSync(() => setCalSel(null)); const b = dayRefs.current[k]; if (b) b.focus({ preventScroll: true }) }
+
+
+  /* 달력 바깥 클릭 시 팝업 닫기. 원본에서 이 리스너보다 먼저 등록돼 화면을 바꾸던 버튼(#herocta, [data-sortgo], #navcond, #navfav)은
+     누른 시점에 이미 달력 화면이 아니게 되어 팝업이 닫히지 않았으므로 똑같이 제외합니다. */
+  useDocumentEvent("click", e => {
+    if (view == "cal" && calSel && !e.target.closest(".calpop,[data-calday],[data-calnav]") && !e.target.closest("#herocta,[data-sortgo],#navcond,#navfav")) setCalSel(null);
+  }, true);
+  useDocumentEvent("keydown", e => {
+    if (e.key == "Escape" && view == "cal" && calSel) { flushSync(() => setCalSel(null)); const b = dayRefs.current[calSel]; if (b) b.focus() }
+  });
 
   /* ---- 후기 ---- */
   const rs = pid => RV[pid] || RV_DEFAULT;
@@ -202,30 +127,8 @@ export default function App({ initial }) {
   }
   const setDraft = (pid, v) => setRV(m => ({ ...m, [pid]: { ...(m[pid] || RV_DEFAULT), draft: v } }));
 
-  /* ---- document 단위 이벤트 (원본에서도 document에 걸려 있던 것들) ---- */
-  const live = useRef(); live.current = { view, calSel, hideMega };
-  useEffect(() => {
-    /* 달력 바깥 클릭 시 팝업 닫기. 원본에서 이 리스너보다 먼저 등록돼 화면을 바꾸던 버튼(#herocta, [data-sortgo], #navcond, #navfav)은
-       누른 시점에 이미 달력 화면이 아니게 되어 팝업이 닫히지 않았으므로 똑같이 제외합니다. */
-    const onClickCapture = e => {
-      const { view, calSel } = live.current;
-      if (view == "cal" && calSel && !e.target.closest(".calpop,[data-calday],[data-calnav]") && !e.target.closest("#herocta,[data-sortgo],#navcond,#navfav")) setCalSel(null);
-    };
-    const onKeyDown = e => {
-      const { view, calSel, hideMega } = live.current;
-      if (e.key == "Escape" && view == "cal" && calSel) { flushSync(() => setCalSel(null)); const b = dayRefs.current[calSel]; if (b) b.focus() }
-      if (e.key == "Escape" && megaKeyRef.current) { const a = navLinks.current[megaKeyRef.current]; hideMega(true); if (a) a.focus() }
-    };
-    const onFocusIn = e => { if (megaKeyRef.current && !navRef.current.contains(e.target)) live.current.hideMega(true) };
-    document.addEventListener("click", onClickCapture, true);
-    document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("focusin", onFocusIn);
-    return () => { document.removeEventListener("click", onClickCapture, true); document.removeEventListener("keydown", onKeyDown); document.removeEventListener("focusin", onFocusIn) };
-  }, []);
 
   /* ================= 렌더 ================= */
-  const main = view == "list";
-
   const tags = []; if (S.age !== "") tags.push(["age", `만 ${S.age}세`]); if (S.region) tags.push(["region", S.region]); if (S.exp !== "") tags.push(["exp", EXPERIENCE_LABELS[S.exp]]); if (S.biz !== "") tags.push(["biz", S.biz === "1" ? "경영체 등록" : "경영체 미등록"]); S.cats.forEach(c => tags.push(["cats:" + c, c])); S.sts.forEach(c => tags.push(["sts:" + c, c]));
 
   function renderPager() {
@@ -281,11 +184,11 @@ export default function App({ initial }) {
     const dl = x.st == "마감" || x.st == "접수 예정" || x.st == "확인 필요" ? "" : d == 0 ? "D-day" : d != null ? "D-" + d : "";
     const isFav = fav.includes(p.id);
     const extLink = (url, label, s) => url ? <a className={`btn ${s}`} href={url} target="_blank" rel="noopener">{`${label} ↗`}</a> : <a className={`btn ${s}`} aria-disabled="true" style={{ opacity: .45, pointerEvents: "none" }}>{`${label} ↗`}</a>;
-    return <article className={`card ${x.e.overall == "no" ? "dim" : ""}`} id={`card-${p.id}`} key={p.id} ref={el => { cardRefs.current[p.id] = el }}>
+    return <article className={`card ${x.e.overall == "no" ? "dim" : ""}`} id={`card-${p.id}`} key={p.id} ref={el => { refs.cards.current[p.id] = el }}>
       <div className="top"><div><span className={`badge ${b[1]}`}>{b[0]}</span><span className={`badge ${x.st == "마감 임박" ? "dd" : "gr"}`}>{`${x.st} ${dl}`}</span><h3>{highlight(p.title, QRE)}</h3>
         <div className="meta">{mix(highlightParts(p.organization, QRE), " · ", p.eligibleFarmerTypes.join(", ") || "지원 대상 명시 없음")}<br />{mix(`신청 ${p.applicationStart || "?"} ~ ${p.applicationEnd || "?"} · `, highlightParts(p.supportType.join("/"), QRE))}</div>{(sn => sn ? <div className="qsnip"><span className="k">검색어 일치</span>{mix(sn.before ? "…" : "", highlightParts(sn.text, QRE), sn.after ? "…" : "")}</div> : null)(findSnippet(p, QRE))}</div>
         <button className="ic" aria-pressed={isFav} aria-label={`관심 정책 ${isFav ? "해제" : "등록"}`} onClick={() => toggleFav(p.id)}>{isFav ? "★ 관심" : "☆ 관심"}</button></div>
-      <div className="cact"><button className="btn s" aria-expanded={o} ref={el => { openBtnRefs.current[p.id] = el }} onClick={() => toggleOpen(p.id)}>{o ? "접기" : "자세히 보기"}</button>{p.applicationUrl || p.officialNoticeUrl ? <a className="btn s" href={p.applicationUrl || p.officialNoticeUrl} target="_blank" rel="noopener noreferrer">{`${p.applicationUrl ? "공식 신청 페이지" : "공식 공고문"} ↗`}</a> : <span className="btn s" aria-disabled="true" style={{ opacity: .45, cursor: "default" }}>공식 링크 없음</span>}</div>
+      <div className="cact"><button className="btn s" aria-expanded={o} ref={el => { refs.openButtons.current[p.id] = el }} onClick={() => toggleOpen(p.id)}>{o ? "접기" : "자세히 보기"}</button>{p.applicationUrl || p.officialNoticeUrl ? <a className="btn s" href={p.applicationUrl || p.officialNoticeUrl} target="_blank" rel="noopener noreferrer">{`${p.applicationUrl ? "공식 신청 페이지" : "공식 공고문"} ↗`}</a> : <span className="btn s" aria-disabled="true" style={{ opacity: .45, cursor: "default" }}>공식 링크 없음</span>}</div>
       {o ? <div className="ex" key={tick}><p style={{ margin: 0 }}>{highlight(p.description, QRE)}</p>
         <div className="ex2"><div className="exc"><h4>신청 대상 및 자격</h4>{p.eligibilityDetails.length ? <ul>{p.eligibilityDetails.map((t, i) => <li key={i}>{highlight(t, QRE)}</li>)}</ul> : <div className="meta">공고에 명시된 내용 없음</div>}</div><div className="exc"><h4>내 조건과 비교 <span className="meta">(참고용)</span></h4>
           <table className="cmp"><tbody>{x.e.checks.map(c => <tr key={c[0]}><td>{c[0]}</td><td><span className={`badge ${LBL[c[1]][1]}`}>{CL[c[1]]}</span></td></tr>)}</tbody></table>
@@ -360,51 +263,29 @@ export default function App({ initial }) {
   }
 
   const hidden = { display: "none" }, shown = { display: "" };
-  const m = megaKey && MEGA_MENU[megaKey];
 
-  return <>
-    <nav ref={navRef} onMouseLeave={() => hideMega()} onMouseEnter={() => clearTimeout(megaT.current)}><div className="w">
-      <a className={`brand${view == "home" ? " on" : ""}`} href="#" id="navhome" aria-current={view == "home" ? "page" : undefined} aria-label="밭모영 홈" onClick={e => { e.preventDefault(); goView("home") }} onMouseEnter={() => hideMega(true)} onFocus={() => hideMega(true)}><img className="brandlogo" src={brandLogo} alt="밭모영" width="100" height="36" /></a>
-      {NAV_ITEMS.map(([id, k, label]) => <a key={id} href={id == "navcond" ? "#top-panel" : "#"} id={id} className={NAV_VIEW[id] == view ? "on" : undefined} aria-current={NAV_VIEW[id] == view ? "page" : undefined} aria-haspopup="true" aria-expanded={megaKey == k} ref={el => { navLinks.current[k] = el }}
-        onClick={e => onNavClick(e, id)} onMouseEnter={() => { if (canHover) showMega(k) }} onFocus={() => { if (canHover) showMega(k) }}>{label}</a>)}
-      <div className="stats" aria-label="정책 현황">
-        <button type="button" data-sortgo="new" title="정책 모아보기 (최신 등록순)" onClick={e => onSortGo(e, "new")}><strong id="s1">{allSt.filter(x => x == "모집 중" || x == "마감 임박").length}</strong>모집 중</button>
-        <button type="button" data-sortgo="due" title="정책 모아보기 (마감 임박순)" onClick={e => onSortGo(e, "due")}><strong id="s2">{allSt.filter(x => x == "마감 임박").length}</strong>마감 임박(7일 이내)</button>
-        <button type="button" title="관심 정책으로 이동" onClick={e => { e.preventDefault(); goHome("fav") }}><strong id="s3">{fav.length}</strong>관심 정책</button>
-      </div></div>
-      <div className="mega" id="mega" hidden={!m}>{m ? <div className="w"><button className="intro" aria-label={`${m[0]} 바로 가기`} onClick={e => onMegaGo(e, megaKey)}><span className="ico">{<Icon name={megaKey} size={32} />}</span><h3>{m[0]}</h3><p>{m[1]}</p><span className="go">바로 가기 →</span></button><div className="sub">{m[2].map((x, i) => <div className="si" key={i}><b>{x[1]}</b><span>{x[2]}</span></div>)}</div></div> : null}</div>
-    </nav>
-    <header className="hero"><div className="w"><img className="herochar" src={heroCharacter} alt="밀짚모자를 쓰고 손을 흔드는 밭모영 캐릭터" width="180" /><h1>제주 청년농 지원사업,<br />내 상황에 맞는 것만 <span className="tang">딱!</span></h1>
-      <button className="btn herocta" id="herocta" onClick={onHeroCta}>나에게 맞는 정책 모아보기<span className="arr" aria-hidden="true">→</span></button>
-    </div></header>
-    <main className="w">
+  return     <main className="w">
       <div id="homeview" className="home" style={view == "home" ? shown : hidden}>{renderHome()}</div>
       <section className="panel" id="searchbox" role="search" aria-label="정책 검색" style={main ? shown : hidden}><div className="search"><div className="qwrap">
-        <input id="q" ref={qRef} type="search" placeholder="정책명, 기관, 키워드 검색 (예: 농기계, 땅, 교육)" aria-label="정책 검색" role="combobox" aria-autocomplete="list" aria-expanded={acOpen} aria-controls="ac" aria-activedescendant={acOpen && ac.i >= 0 ? "ac-" + ac.i : undefined} autoComplete="off"
+        <input id="q" ref={refs.q} type="search" placeholder="정책명, 기관, 키워드 검색 (예: 농기계, 땅, 교육)" aria-label="정책 검색" role="combobox" aria-autocomplete="list" aria-expanded={acOpen} aria-controls="ac" aria-activedescendant={acOpen && ac.i >= 0 ? "ac-" + ac.i : undefined} autoComplete="off"
           value={qInput} onChange={onQChange} onKeyDown={onQKeyDown} onBlur={() => { setTimeout(acClose, 120) }} />
         <ul id="ac" className="ac" role="listbox" aria-label="추천 검색어" hidden={!acOpen} onMouseDown={e => e.preventDefault()}>{ac.items.map((o, i) => <li key={i} id={`ac-${i}`} role="option" aria-selected={i == ac.i} onClick={() => acPick(i)}><span className="k">{o.kind}</span><span className="t">{markInput(o.v, ac.mv)}</span></li>)}</ul>
       </div><button className="btn" id="goto" onClick={e => { e.preventDefault(); doSearch() }}>맞춤 정책 찾기</button></div>
         <p id="qinfo" className="qinfo" hidden={!Q}>{Q ? <><b>{`'${Q}'`}</b>{` 검색 결과${syn.length ? ` · 함께 찾은 말: ${syn.slice(0, 6).join(", ")}` : ""} `}<button className="ic qclear" onClick={clearQuery}>검색어 지우기</button></> : null}</p></section>
-      <section className="panel" id="top-panel" ref={topPanelRef} style={main ? shown : hidden}><div className="phead"><h2>내 조건</h2><p className="hint">나이·지역·경력·경영체 등록 여부를 입력하면 기본 조건이 맞는 정책을 먼저 보여드립니다. 조건은 이 기기에만 저장됩니다.</p></div>
-        <div className="frow"><span className="flab" id="cats-l">카테고리</span><div className="chips" id="cats" role="group" aria-labelledby="cats-l" ref={catsRef}>{CATEGORIES.map(x => <button key={x} className="chip" aria-pressed={S.cats.includes(x)} onClick={() => toggleChip("cats", x)}>{x}</button>)}</div></div>
-        <div className="frow"><span className="flab" id="sts-l">모집 상태</span><div className="chips" id="sts" role="group" aria-labelledby="sts-l" ref={stsRef}>{STATUSES.map(x => <button key={x} className="chip" aria-pressed={S.sts.includes(x)} onClick={() => toggleChip("sts", x)}>{x}</button>)}</div></div>
-        <div className="row"><div><label htmlFor="age">만 나이</label><input id="age" ref={ageRef} type="number" min="0" max="120" placeholder="예: 32" value={S.age} onChange={e => onCondChange("age", e)} /></div>
+      <section className="panel" id="top-panel" ref={refs.topPanel} style={main ? shown : hidden}><div className="phead"><h2>내 조건</h2><p className="hint">나이·지역·경력·경영체 등록 여부를 입력하면 기본 조건이 맞는 정책을 먼저 보여드립니다. 조건은 이 기기에만 저장됩니다.</p></div>
+        <div className="frow"><span className="flab" id="cats-l">카테고리</span><div className="chips" id="cats" role="group" aria-labelledby="cats-l" ref={refs.cats}>{CATEGORIES.map(x => <button key={x} className="chip" aria-pressed={S.cats.includes(x)} onClick={() => toggleChip("cats", x)}>{x}</button>)}</div></div>
+        <div className="frow"><span className="flab" id="sts-l">모집 상태</span><div className="chips" id="sts" role="group" aria-labelledby="sts-l" ref={refs.sts}>{STATUSES.map(x => <button key={x} className="chip" aria-pressed={S.sts.includes(x)} onClick={() => toggleChip("sts", x)}>{x}</button>)}</div></div>
+        <div className="row"><div><label htmlFor="age">만 나이</label><input id="age" ref={refs.age} type="number" min="0" max="120" placeholder="예: 32" value={S.age} onChange={e => onCondChange("age", e)} /></div>
           <div><label htmlFor="reg">영농 지역</label><select id="reg" value={S.region} onChange={e => onCondChange("region", e)}><option value="">선택 안 함</option><option>제주시</option><option>서귀포시</option></select></div>
           <div><label htmlFor="exp">영농경력</label><select id="exp" value={S.exp} onChange={e => onCondChange("exp", e)}><option value="">선택 안 함</option><option value="0">영농 준비 중</option><option value="1">1년 미만</option><option value="2">1~2년</option><option value="3">3~5년</option><option value="4">5년 초과</option></select></div>
           <div><label htmlFor="biz">농업경영체 등록</label><select id="biz" value={S.biz} onChange={e => onCondChange("biz", e)}><option value="">선택 안 함</option><option value="1">등록함</option><option value="0">등록 안 함</option></select></div></div>
         <div className="chips" id="tags" aria-live="polite">{tags.length ? <button className="ic" id="reset" onClick={resetAll}>전체 초기화</button> : null}{tags.map(t => <button key={t[0]} className="tag" aria-label={`${t[1]} 필터 해제`} onClick={() => removeTag(t[0])}>{`${t[1]} ✕`}</button>)}</div></section>
       <section className="panel" id="calview" style={view == "cal" ? shown : hidden} aria-label="신청 달력">{view == "cal" ? renderCal() : null}</section>
       <section className="panel" id="sideview" style={view == "fav" || view == "rec" ? shown : hidden} aria-live="polite">{view == "fav" || view == "rec" ? renderSide() : null}</section>
-      <div className="bar" ref={barRef} style={main ? shown : hidden}><strong id="cnt">{`검색 결과 ${L.length}건`}</strong><div><label className="sl">정렬 <select id="sort" value={sort} onChange={e => { setSort(e.target.value); setPg(1); bump() }}><option value="fit">나에게 맞는 정책순</option><option value="due">마감 임박순</option><option value="new">최신 등록순</option></select></label>
-        <label className="ck"><input type="checkbox" id="hide" checked={hide} onChange={e => { setHide(e.target.checked); setPg(1); bump() }} /> 조건 불일치 숨기기</label><label className="ck"><input type="checkbox" id="hideend" checked={hideend} onChange={e => { setHideend(e.target.checked); setPg(1); bump() }} /> 마감 정책 숨기기</label></div></div>
-      <div id="list" ref={listRef} style={main ? shown : hidden}>{L.length ? L.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(card) : <div className="empty"><b>조건에 맞는 정책 없음</b><br />{`${Q ? `'${Q}' 대신 더 짧거나 일반적인 말(예: 농지, 자금, 교육)로 검색하거나 ` : ""}필터를 줄이거나 '조건 불일치 숨기기'·'마감 정책 숨기기'를 해제하십시오.`}</div>}</div>
+      <div className="bar" ref={refs.bar} style={main ? shown : hidden}><strong id="cnt">{`검색 결과 ${L.length}건`}</strong><div><label className="sl">정렬 <select id="sort" value={sort} onChange={e => changeSort(e.target.value)}><option value="fit">나에게 맞는 정책순</option><option value="due">마감 임박순</option><option value="new">최신 등록순</option></select></label>
+        <label className="ck"><input type="checkbox" id="hide" checked={hide} onChange={e => changeHideMismatch(e.target.checked)} /> 조건 불일치 숨기기</label><label className="ck"><input type="checkbox" id="hideend" checked={hideend} onChange={e => changeHideClosed(e.target.checked)} /> 마감 정책 숨기기</label></div></div>
+      <div id="list" style={main ? shown : hidden}>{L.length ? L.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(card) : <div className="empty"><b>조건에 맞는 정책 없음</b><br />{`${Q ? `'${Q}' 대신 더 짧거나 일반적인 말(예: 농지, 자금, 교육)로 검색하거나 ` : ""}필터를 줄이거나 '조건 불일치 숨기기'·'마감 정책 숨기기'를 해제하십시오.`}</div>}</div>
       <div className="pager" id="pager" role="navigation" aria-label="정책 목록 페이지" hidden={tp <= 1} style={main ? shown : hidden}>{renderPager()}</div>
-      <section className="panel" id="srcs" ref={srcsRef} style={main ? shown : hidden}><h2>공식 공고 바로가기</h2><p className="hint">도청, 시청, 농업기술센터, 농어촌공사 공고를 한곳에서 확인하시기 바랍니다. 새 공고는 아래 공식 사이트에 먼저 올라오고, 이 페이지의 정보와 다르면 공식 사이트가 기준입니다.</p><div className="chips">{OFFICIAL_SOURCES.map(([href, label]) => <a key={href} className="chip" style={{ textDecoration: "none", color: "inherit" }} href={href} target="_blank" rel="noopener noreferrer">{label} ↗</a>)}</div></section>
-      <footer>⚠ 정책 정보는 공개된 공고·보도자료를 바탕으로 정리한 것이며 확인일은 카드에 표시됩니다. 신청 기간과 자격은 바뀔 수 있습니다. 조건 비교는 참고용이며 공식 자격 심사가 아닙니다. 최종 신청 자격은 반드시 공식 공고문에서 확인하시기 바랍니다.</footer></main>
-    <footer className="sitefoot" aria-label="사이트 정보"><div className="w">
-      <img className="flogo" src={footerLogo} alt="혼디모영" width="40" /><div className="finfo"><p className="fname"><strong>혼디모영</strong> (hondi-moyeong)</p><p className="fmail"><strong>이메일</strong> moyeonghondi@gmail.com</p>
-        <p className="fcopy">© 2026 hondi-moyeong. All rights reserved.</p></div>
-      <a className="insta" href="https://www.instagram.com/moyeonghondi?exln=a3o0bDJrYnJ2eHVt" target="_blank" rel="noopener" aria-label="혼디모영 인스타그램 (새 창)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" /></svg></a>
-    </div></footer>
-  </>
+      <section className="panel" id="srcs" ref={refs.srcs} style={main ? shown : hidden}><h2>공식 공고 바로가기</h2><p className="hint">도청, 시청, 농업기술센터, 농어촌공사 공고를 한곳에서 확인하시기 바랍니다. 새 공고는 아래 공식 사이트에 먼저 올라오고, 이 페이지의 정보와 다르면 공식 사이트가 기준입니다.</p><div className="chips">{OFFICIAL_SOURCES.map(([href, label]) => <a key={href} className="chip" style={{ textDecoration: "none", color: "inherit" }} href={href} target="_blank" rel="noopener noreferrer">{`${label} ↗`}</a>)}</div></section>
+      <footer>⚠ 정책 정보는 공개된 공고·보도자료를 바탕으로 정리한 것이며 확인일은 카드에 표시됩니다. 신청 기간과 자격은 바뀔 수 있습니다. 조건 비교는 참고용이며 공식 자격 심사가 아닙니다. 최종 신청 자격은 반드시 공식 공고문에서 확인하시기 바랍니다.</footer></main>;
 }
