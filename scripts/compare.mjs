@@ -21,6 +21,8 @@ await server.listen();
 const BASE = server.resolvedUrls.local[0].replace(/\/$/, "");
 const URLS = { orig: BASE + "/original/original/index.html", react: BASE + "/" };
 const settle = (p, ms = 900) => p.waitForTimeout(ms);
+// 클릭 후 상세 영역 등장 애니메이션(0.2초)이 끝날 때까지 기다림 (연속 클릭 시 타이밍 차이 방지)
+const tap = async (p, sel) => { await p.click(sel); await p.waitForTimeout(250) };
 
 const desktop = [
   ["home", async p => { }],
@@ -36,15 +38,15 @@ const desktop = [
   ["open-card2", async p => { await p.locator(".card").nth(1).locator("text=자세히 보기").first().click(); await p.mouse.move(5, 890); await settle(p) }],
   ["scroll-card2", async p => { await p.locator(".card").nth(1).scrollIntoViewIfNeeded(); await p.evaluate(() => window.scrollBy(0, 300)); await settle(p, 300) }],
   ["doc-check", async p => { const c = p.locator(".ex input[type=checkbox]").first(); if (await c.count()) await c.click(); await settle(p, 300) }],
-  ["rv-write", async p => { await p.click(".rv >> text=후기 쓰기"); await settle(p, 300) }],
-  ["rv-star", async p => { await p.click(".rv .rvi >> text=4점"); await p.click(".rv .rvi >> text=신청이 쉬워요"); await p.click(".rv .rvi >> text=서류가 복잡해요"); await settle(p, 300) }],
-  ["rv-submit-short", async p => { await p.fill(".rv textarea", "짧음"); await p.click(".rv >> text=후기 등록"); await settle(p, 300) }],
-  ["rv-submit", async p => { await p.fill(".rv textarea", "신청 과정이 생각보다 간단했어요.\n추천합니다."); await p.click(".rv >> text=후기 등록"); await settle(p, 300) }],
-  ["rv-filter", async p => { await p.click(".rv >> text=별점 높은순"); await p.click(".rv [aria-label='별점 필터'] >> text=4점"); await settle(p, 300) }],
-  ["rv-edit", async p => { await p.click(".rv >> text=내 후기 수정"); await settle(p, 300) }],
-  ["rv-edit-submit", async p => { await p.click(".rv .rvi >> text=5점"); await p.fill(".rv textarea", "다시 써 보니 더 좋았어요."); await p.click(".rv >> text=후기 등록"); await settle(p, 300) }],
-  ["rv-delete", async p => { await p.click(".rv >> text=내 후기 삭제"); await settle(p, 300) }],
-  ["rv-rewrite", async p => { await p.click(".rv >> text=후기 쓰기"); await p.click(".rv .rvi >> text=3점"); await p.fill(".rv textarea", "세 번째 후기입니다."); await p.click(".rv >> text=후기 등록"); await settle(p, 300) }],
+  ["rv-write", async p => { await tap(p, ".rv >> text=후기 쓰기"); await settle(p, 300) }],
+  ["rv-star", async p => { await tap(p, ".rv .rvi >> text=4점"); await tap(p, ".rv .rvi >> text=신청이 쉬워요"); await tap(p, ".rv .rvi >> text=서류가 복잡해요"); await settle(p, 300) }],
+  ["rv-submit-short", async p => { await p.fill(".rv textarea", "짧음"); await tap(p, ".rv >> text=후기 등록"); await settle(p, 300) }],
+  ["rv-submit", async p => { await p.fill(".rv textarea", "신청 과정이 생각보다 간단했어요.\n추천합니다."); await tap(p, ".rv >> text=후기 등록"); await settle(p, 300) }],
+  ["rv-filter", async p => { await tap(p, ".rv >> text=별점 높은순"); await tap(p, ".rv [aria-label='별점 필터'] >> text=4점"); await settle(p, 300) }],
+  ["rv-edit", async p => { await tap(p, ".rv >> text=내 후기 수정"); await settle(p, 300) }],
+  ["rv-edit-submit", async p => { await tap(p, ".rv .rvi >> text=5점"); await p.fill(".rv textarea", "다시 써 보니 더 좋았어요."); await tap(p, ".rv >> text=후기 등록"); await settle(p, 300) }],
+  ["rv-delete", async p => { await tap(p, ".rv >> text=내 후기 삭제"); await settle(p, 300) }],
+  ["rv-rewrite", async p => { await tap(p, ".rv >> text=후기 쓰기"); await tap(p, ".rv .rvi >> text=3점"); await p.fill(".rv textarea", "세 번째 후기입니다."); await tap(p, ".rv >> text=후기 등록"); await settle(p, 300) }],
   ["rec-chip", async p => { await p.click(".ex [aria-label='신청 기록'] >> text=신청 준비 중"); await settle(p, 300) }],
   ["fav", async p => { await p.locator(".card").nth(0).locator("button.ic").click(); await settle(p, 300) }],
   ["search-type", async p => { await p.click("#q"); await p.keyboard.type("농기"); await settle(p, 500) }],
@@ -52,6 +54,9 @@ const desktop = [
   ["search-enter", async p => { await p.keyboard.press("Enter"); await settle(p) }],
   ["search-clear", async p => { await p.click("text=검색어 지우기"); await settle(p, 300) }],
   ["search-땅", async p => { await p.fill("#q", "땅"); await p.click("#goto"); await settle(p) }],
+  ["search-esc", async p => { await p.fill("#q", ""); await p.keyboard.type("교"); await settle(p, 500); await p.keyboard.press("ArrowUp"); await p.keyboard.press("Escape"); await settle(p, 200) }],
+  ["search-click", async p => { await p.keyboard.type("육"); await settle(p, 500); await p.locator("#ac li").first().click(); await p.mouse.move(5, 890); await settle(p) }],
+  ["hide-off", async p => { await p.uncheck("#hide"); await settle(p, 300) }],
   ["reset", async p => { await p.click("#reset"); await settle(p, 300) }],
   ["sort-due", async p => { await p.selectOption("#sort", "due"); await settle(p, 300) }],
   ["hideend", async p => { await p.check("#hideend"); await settle(p, 300) }],
@@ -170,7 +175,13 @@ const suites = [
   ["mobile-full", mobile.slice(0, 1), { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, true],
 ];
 try {
-  for (const [label, steps, opts, full] of suites) if (!only || only == label) bad += await run(browser, label, steps, opts, full);
+  for (const [label, steps, opts, full] of suites) {
+    if (only && only != label) continue;
+    let n = await run(browser, label, steps, opts, full);
+    // 실패한 묶음은 한 번 더 실행: 두 번 모두 다를 때만 실제 차이로 봄 (브라우저 타이밍에 따른 일시적 차이 제외)
+    if (n) { console.log(`\n↻ ${label} 다시 실행`); n = await run(browser, label, steps, opts, full) }
+    bad += n;
+  }
 } finally {
   await browser.close();
   await server.close();

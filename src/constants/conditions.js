@@ -23,3 +23,12 @@ export const EMPTY_CONDITIONS = { age: "", region: "", exp: "", biz: "", cats: [
 
 /** 정책 목록 한 쪽에 보여 줄 개수 */
 export const PAGE_SIZE = 10;
+
+/** 목록 정렬 선택지 */
+export const SORT_OPTIONS = [["fit", "나에게 맞는 정책순"], ["due", "마감 임박순"], ["new", "최신 등록순"]];
+
+/** 자격 판정 결과 → [카드 배지 문구, 배지 색] */
+export const ELIGIBILITY_LABELS = { ok: ["기본 조건 일치", "ok"], unknown: ["추가 확인 필요", "chk"], no: ["조건 불일치", "no"] };
+
+/** 조건별 판정 결과 → 비교표 문구 */
+export const CHECK_LABELS = { ok: "일치", unknown: "확인 필요", no: "불일치" };
