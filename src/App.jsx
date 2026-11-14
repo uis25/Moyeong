@@ -4,20 +4,17 @@
  */
 import { Fragment, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import CHG from "./assets/character-greeting.png";
-import CHP from "./assets/character-pointing.png";
 import AppProvider from "./app/AppProvider";
 import { useApp } from "./app/AppContext";
 import NavBar from "./features/navigation/NavBar";
 import Hero from "./features/navigation/Hero";
 import SiteFooter from "./features/navigation/SiteFooter";
-import Icon from "./components/Icon";
+import HomeView from "./features/home/HomeView";
 import useDocumentEvent from "./hooks/useDocumentEvent";
 import { CATEGORIES, STATUSES, EXPERIENCE_LABELS, PAGE_SIZE } from "./constants/conditions";
 import { REVIEW_KEYWORDS, STAR_FILTERS, REVIEW_SORTS, REVIEWS_PER_PAGE } from "./constants/reviews";
 import { RECORD_STATUSES } from "./constants/records";
 import { OFFICIAL_SOURCES } from "./constants/sources";
-import { HOME_STEPS, HOME_MENU, HOME_PILLARS } from "./constants/navigation";
 import { TODAY, pad2, ymd } from "./utils/date";
 import { dday, status, deadlineMeta, shortCategory } from "./utils/policyStatus";
 import { relatedWords, findSnippet, buildSuggestions } from "./utils/search";
@@ -200,21 +197,6 @@ function LegacyMain() {
     </article>
   }
 
-  function renderHome() {
-    const all = policies.map(p => ({ p, st: status(p) }));
-    const op = all.filter(x => ["모집 중", "마감 임박", "접수 예정"].includes(x.st)).sort((a, b) => (a.p.applicationEnd || "9").localeCompare(b.p.applicationEnd || "9"));
-    const recent = all.filter(x => !op.includes(x)).sort((a, b) => (b.p.reg || "").localeCompare(a.p.reg || "")), pick = [...op, ...recent].slice(0, 3);
-    return <>
-      <section className="hsec hs-how" aria-labelledby="how-t"><h2 id="how-t" className="hhow">이렇게 이용하세요<img className="sc-g2" src={CHG} alt="" aria-hidden="true" /></h2><ol className="steps">
-        {HOME_STEPS.map(s => <li key={s[0]}><b>{s[0]}</b><span>{s[1]}</span></li>)}</ol>
-        <button className="btn" style={{ marginTop: 16 }} onClick={e => { e.preventDefault(); goHome("cond") }}>내 조건 입력하고 시작하기</button></section>
-      <section className="hsec hs-menu" aria-labelledby="menu-t"><h2 id="menu-t">무엇을 할 수 있나요</h2><p className="hint">필요한 메뉴를 누르면 바로 이동합니다.</p><div className="scw" aria-hidden="true"><img className="sc sc-p" src={CHP} alt="" /></div><div className="mgrid">{HOME_MENU.map(m => <button key={m[0]} className="mitem" onClick={e => { e.preventDefault(); goHome(m[0]) }}><span className="ico">{<Icon name={m[0]} />}</span><span><b>{m[1]}</b><span>{m[2]}</span></span></button>)}</div></section>
-      <section className="hsec" aria-labelledby="now-t"><div className="hhead"><h2 id="now-t">{op.length ? "지금 확인할 정책" : "최근 등록된 정책"}</h2><button className="more" data-sortgo="" onClick={e => onSortGo(e, "")}>전체 정책 모아보기 ›</button></div><p className="hint">{op.length ? "모집 중이거나 곧 접수가 시작되는 정책입니다." : "현재 모집 중인 정책이 없어 최근 등록 순으로 보여드립니다."}</p><div className="nowlist">{pick.map(x => { const d = x.p.applicationEnd && x.st != "마감" ? dday(x.p) : null; return <button key={x.p.id} className="nowc" onClick={() => openPolicy(x.p.id)}><span><span className={`badge ${x.st == "마감 임박" ? "dd" : x.st == "모집 중" ? "ok" : "gr"}`}>{x.st + (d != null && x.st != "접수 예정" ? (d == 0 ? " D-day" : " D-" + d) : "")}</span></span><b>{x.p.title}</b><span className="meta">{x.p.organization}</span></button> })}</div></section>
-      <section className="goal" aria-labelledby="goal-t"><div className="eyebrow" id="goal-t">밭모영의 목표</div><p className="lead">제주 청년농이 받을 수 있는 지원을 놓치지 않도록,<br />흩어진 공고를 한 밭에 모아 내 조건에 맞는 것부터 보여드립니다.</p>
-        <div className="pillars">{HOME_PILLARS.map(x => <div className="pillar" key={x[0]}><b>{x[0]}</b><span>{x[1]}</span></div>)}</div></section>
-    </>
-  }
-
   function renderCal() {
     const first = new Date(calY, calM, 1).getDay(), days = new Date(calY, calM + 1, 0).getDate(), pre = calY + "-" + pad2(calM + 1), ev = {}, sv = {};
     policies.forEach(p => { if (p.applicationEnd && p.applicationEnd.startsWith(pre)) (ev[p.applicationEnd] = ev[p.applicationEnd] || []).push(p); if (p.applicationStart && p.applicationStart.startsWith(pre)) (sv[p.applicationStart] = sv[p.applicationStart] || []).push(p) });
@@ -265,7 +247,7 @@ function LegacyMain() {
   const hidden = { display: "none" }, shown = { display: "" };
 
   return     <main className="w">
-      <div id="homeview" className="home" style={view == "home" ? shown : hidden}>{renderHome()}</div>
+      <HomeView />
       <section className="panel" id="searchbox" role="search" aria-label="정책 검색" style={main ? shown : hidden}><div className="search"><div className="qwrap">
         <input id="q" ref={refs.q} type="search" placeholder="정책명, 기관, 키워드 검색 (예: 농기계, 땅, 교육)" aria-label="정책 검색" role="combobox" aria-autocomplete="list" aria-expanded={acOpen} aria-controls="ac" aria-activedescendant={acOpen && ac.i >= 0 ? "ac-" + ac.i : undefined} autoComplete="off"
           value={qInput} onChange={onQChange} onKeyDown={onQKeyDown} onBlur={() => { setTimeout(acClose, 120) }} />
