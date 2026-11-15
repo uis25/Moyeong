@@ -24,10 +24,16 @@ const settle = (p, ms = 900) => p.waitForTimeout(ms);
 // 원본에서 의도적으로 바꾼 부분(docs/differences.md)은 원본 쪽에 같은 변경을 CSS로 적용한 뒤 비교
 const ORIGINAL_OVERRIDES = [
   ".upcoming{background:var(--g2);color:var(--g);opacity:.45}", // 접수 예정 배지 (흐린 초록)
+  // 글꼴 출처 차이(차이 3번): Google Fonts와 npm 패키지의 글꼴 파일이 ◉ 기호를 몇 픽셀 다르게 그림 → 원본 쪽 ◉도 React와 같은 파일로
+  // (같은 글꼴 이름·범위가 겹치면 나중에 정의한 @font-face가 먼저 쓰임)
+  ...[400, 500, 700, 800].map(w => `@font-face{font-family:"Noto Sans KR";font-weight:${w};font-style:normal;unicode-range:U+25C9;src:url(/node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-96-${w}-normal.woff2) format("woff2")}`),
 ].join("\n");
 // 원본이 카드 HTML을 만드는 card() 함수를 감싸서 같은 변경을 적용 (요소 자체를 빼서 React와 같은 DOM으로 만듦)
 // 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터(P)도 현재 policies.json으로 맞춘 뒤 비교 (코드 동작만 비교)
-const POLICIES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/constants/policies.json"), "utf8"));
+// 원본은 글자를 HTML로 그대로 끼워 넣어 원문의 "<P. 26>" 같은 표기가 태그로 읽혀 사라짐 → 원본 쪽 데이터만 < > 를 기호로 바꿔 비교 (React는 원래 기호 그대로 표시)
+const escTags = v => typeof v == "string" ? v.replace(/</g, "&lt;").replace(/>/g, "&gt;") : Array.isArray(v) ? v.map(escTags) : v;
+const POLICIES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/constants/policies.json"), "utf8"))
+  .map(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, ["description", "details", "eligibilityDetails", "requiredDocuments"].includes(k) ? escTags(v) : v])));
 const ORIGINAL_SCRIPT = policies => {
   P.splice(0, P.length, ...policies); // 원본 스크립트의 최상위 const P (배열 내용만 교체)
   STS.splice(STS.indexOf("확인 필요"), 1); // 모집 상태 필터 칩에서 "확인 필요" 제거
@@ -40,7 +46,16 @@ const ORIGINAL_SCRIPT = policies => {
     .replace(/(<div class="top"><div>)<span class="badge [^"]*">(([^ <]+(?: [^ <]+)?) [^<]*)<\/span>/, (m, head, text, st) =>
       `${head}<span class="badge ${{ "모집 중": "ok", "마감 임박": "dd", "접수 예정": "upcoming", "확인 필요": "chk", "마감": "gr" }[st] || "gr"}">${text}</span>`)
     // 공식 링크가 없으면 "공식 링크 없음" 대신 흐린 "공식 공고문 ↗" 버튼
-    .replace('<span class="btn s" aria-disabled="true" style="opacity:.45;cursor:default">공식 링크 없음</span>', '<a class="btn s" aria-disabled="true" style="opacity:.45;pointer-events:none">공식 공고문 ↗</a>');
+    .replace('<span class="btn s" aria-disabled="true" style="opacity:.45;cursor:default">공식 링크 없음</span>', '<a class="btn s" aria-disabled="true" style="opacity:.45;pointer-events:none">공식 공고문 ↗</a>')
+    // 내 조건과 비교: 나이 조건 원문(ageText)이 있으면 숫자 범위 대신 원문 그대로
+    .replace(/(<div class="note">정책 기준: 연령 )[^·]*?( · 영농경력)/, (m, a, b) => x.p.ageText ? a + x.p.ageText + b : m)
+    // 자세히 보기: 요약이 비면 안내 문구, 요약 아래 "주요 내용" 칸 추가
+    .replace(/<div class="ex"><p style="margin:0">[\s\S]*?<\/p>/, () => {
+      const p = x.p, D = p.details || [];
+      return '<div class="ex">' + (p.description ? `<p style="margin:0">${hl(p.description)}</p>` : '<p class="meta" style="margin:0">확인된 요약 없음. 공식 공고를 확인하십시오.</p>')
+        + '<h4>주요 내용</h4>' + (D.length ? `<ul>${D.map(t => `<li>${hl(t)}</li>`).join("")}</ul>` : '<div class="meta">확인된 내용 없음. 공식 공고를 확인하십시오.</div>')
+        + (p.detailsMore ? '<div class="meta">자세한 내용은 공식 공고문과 첨부 파일을 확인하십시오.</div>' : '');
+    });
   // 목록 정렬: 모집 상태 순서(마감 임박·모집 중 → 접수 예정 → 확인 필요 → 마감) 추가.
   // 원본 render() 안의 정렬 부분만 바꿔 같은 이름으로 다시 정의 (render를 부르는 다른 함수들도 새 render를 씀)
   const SORT_OLD = 'L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;if(so=="due"){if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||b.e.score-a.e.score});';

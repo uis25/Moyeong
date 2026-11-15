@@ -5,6 +5,7 @@ import DocChecklist from "./DocChecklist";
 import ReviewSection from "../reviews/ReviewSection";
 import RecordChips from "../records/RecordChips";
 import { ELIGIBILITY_LABELS, CHECK_LABELS } from "../../constants/conditions";
+import { EMPTY_MESSAGES } from "../../constants/messages";
 import { highlight } from "../../utils/text";
 import { useApp } from "../../app/AppContext";
 
@@ -21,14 +22,20 @@ export default function PolicyDetail({ item, reviews }) {
   const { QRE } = useApp();
   const p = item.p;
   return <div className="ex">
-    <p style={{ margin: 0 }}>{highlight(p.description, QRE)}</p>
+    {/* 요약: 공고의 목적·개요 문장을 원문 그대로. 없으면 안내 문구 */}
+    {p.description ? <p style={{ margin: 0 }}>{highlight(p.description, QRE)}</p> : <p className="meta" style={{ margin: 0 }}>{EMPTY_MESSAGES.summary}</p>}
+    {/* 주요 내용: 기간·지원·접수·문의 등 공고 항목을 원문 그대로 한 줄씩 */}
+    <h4>주요 내용</h4>
+    {(p.details || []).length ? <ul>{p.details.map((t, i) => <li key={i}>{highlight(t, QRE)}</li>)}</ul> : <div className="meta">{EMPTY_MESSAGES.details}</div>}
+    {/* 주요 내용을 일부만 옮긴 정책: 공고문·첨부 확인 안내 */}
+    {p.detailsMore ? <div className="meta">{EMPTY_MESSAGES.detailsMore}</div> : null}
     <div className="ex2">
       <div className="exc"><h4>신청 대상 및 자격</h4>
-        {p.eligibilityDetails.length ? <ul>{p.eligibilityDetails.map((t, i) => <li key={i}>{highlight(t, QRE)}</li>)}</ul> : <div className="meta">공고에 명시된 내용 없음</div>}
+        {p.eligibilityDetails.length ? <ul>{p.eligibilityDetails.map((t, i) => <li key={i}>{highlight(t, QRE)}</li>)}</ul> : <div className="meta">{EMPTY_MESSAGES.eligibility}</div>}
       </div>
       <div className="exc"><h4>내 조건과 비교 <span className="meta">(참고용)</span></h4>
         <table className="cmp"><tbody>{item.e.checks.map(([name, result]) => <tr key={name}><td>{name}</td><td><Badge variant={ELIGIBILITY_LABELS[result][1]}>{CHECK_LABELS[result]}</Badge></td></tr>)}</tbody></table>
-        <div className="note">{`정책 기준: 연령 ${range(p.minAge, p.maxAge, "세")} · 영농경력 ${range(p.minFarmingYears, p.maxFarmingYears, "년")} · 지역 ${p.eligibleRegions.join(", ") || "명시 없음"} · 농업경영체 등록 ${p.requiresBusinessRegistration == null ? "명시 없음" : p.requiresBusinessRegistration ? "필요" : "불필요"}. 이 비교는 공식 자격 심사가 아니며, 다른 필수 자격이 있을 수 있습니다.`}</div>
+        <div className="note">{`정책 기준: 연령 ${p.ageText || range(p.minAge, p.maxAge, "세")} · 영농경력 ${range(p.minFarmingYears, p.maxFarmingYears, "년")} · 지역 ${p.eligibleRegions.join(", ") || "명시 없음"} · 농업경영체 등록 ${p.requiresBusinessRegistration == null ? "명시 없음" : p.requiresBusinessRegistration ? "필요" : "불필요"}. 이 비교는 공식 자격 심사가 아니며, 다른 필수 자격이 있을 수 있습니다.`}</div>
       </div>
     </div>
     <h4>준비 서류 체크리스트</h4>
