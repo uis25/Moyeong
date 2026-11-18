@@ -112,6 +112,7 @@
   --space-32: 32px;
   --space-36: 36px;
   --space-40: 40px;
+  --space-44: 44px;
   --space-48: 48px;
   --space-56: 56px;
   --space-72: 72px;
@@ -130,6 +131,7 @@
   /* 그림자 */
   --shadow-cta: 0 8px 20px -10px rgba(23,107,77,.6);
   --shadow-mega: 0 18px 30px -18px rgba(0,0,0,.18);
+  --color-scrim: rgba(0,0,0,.32);
   --shadow-popover: 0 16px 40px -12px rgba(0,0,0,.25);
 
   /* 크기 */

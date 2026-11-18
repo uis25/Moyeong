@@ -27,6 +27,11 @@ const ORIGINAL_OVERRIDES = [
   // 글꼴 출처 차이(차이 3번): Google Fonts와 npm 패키지의 글꼴 파일이 ◉ 기호를 몇 픽셀 다르게 그림 → 원본 쪽 ◉도 React와 같은 파일로
   // (같은 글꼴 이름·범위가 겹치면 나중에 정의한 @font-face가 먼저 쓰임)
   ...[400, 500, 700, 800].map(w => `@font-face{font-family:"Noto Sans KR";font-weight:${w};font-style:normal;unicode-range:U+25C9;src:url(/node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-96-${w}-normal.woff2) format("woff2")}`),
+  // 요청으로 바꾼 디자인(차이 17~19번: 메뉴 안내판 높이, 화면별 제목, 선택 상자)은 React의 해당 CSS 파일을 원본 쪽에도 그대로 적용
+  // (원본과 CSS 변수 이름이 달라 React 토큰 파일도 함께 넣음. 변수 정의만 있어 원본의 다른 부분에는 영향 없음)
+  ...["styles/tokens.css", "features/navigation/MegaMenu.css", "features/navigation/MobileMenu.css", "features/navigation/Hero.css", "components/Select.css", "features/policies/ConditionsPanel.css", "features/policies/ResultBar.css"]
+    .map(f => fs.readFileSync(path.join(ROOT, "src", f), "utf8")),
+  ".mega .intro .ico{margin-bottom:0}", // React에서 지운 원본 규칙(아이콘 아래 16px 여백)을 원본 쪽에서도 없앰
 ].join("\n");
 // 원본이 카드 HTML을 만드는 card() 함수를 감싸서 같은 변경을 적용 (요소 자체를 빼서 React와 같은 DOM으로 만듦)
 // 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터(P)도 현재 policies.json으로 맞춘 뒤 비교 (코드 동작만 비교)
@@ -72,12 +77,94 @@ const ORIGINAL_SCRIPT = policies => {
   // 후기 작성 폼 아래 저장 안내 문구, 신청 기록 아래 안내 문구 제거
   redefine("rvSection", "<div class=\"note\">${RVMODE==\"shared\"?\"후기는 이 페이지를 여는 사람들과 공유됩니다. 작성자 이름은 표시되지 않습니다. 같은 계정으로 다시 등록하면 기존 후기가 수정됩니다.\":\"공유 저장소에 연결되지 않아 후기는 이 기기(localStorage)에만 저장되고, 다른 사람에게는 보이지 않습니다. 같은 기기에서 다시 등록하면 기존 후기가 수정됩니다.\"}</div>", "");
   redefine("recBlock", '<div class="note">직접 고르는 진행 상태 (다시 누르면 기록 삭제, 이 기기에만 저장)</div>', "");
-  // 다른 화면으로 가면 달력 날짜 팝업 닫기
-  (0, eval)('{ const sv = setView; setView = function (v) { if (v != "cal") calSel = null; return sv(v) } }');
+  // "이 기기에만 저장" 안내 문구 삭제: 내 조건 칸 설명, 홈 '이렇게 이용하세요' 1단계 (차이 20번)
+  document.querySelector("#top-panel .phead .hint").remove();
+  redefine("renderHome", "<span>만 나이·영농 지역·영농경력·농업경영체 등록 여부 입력 (이 기기에만 저장)</span>", "<span>만 나이·영농 지역·영농경력·농업경영체 등록 여부 입력</span>");
+  // 메뉴 안내판: 아이콘(24px)과 제목을 한 줄로 (차이 17번)
+  redefine("showMega", '<span class="ico">${svg(MICO[k]).replace(/width="22" height="22"/,\'width="32" height="32"\')}</span><h3>${m[0]}</h3>',
+    '<span class="ttl"><span class="ico">${svg(MICO[k]).replace(/width="22" height="22"/,\'width="24" height="24"\')}</span><h3>${m[0]}</h3></span>');
+  // 상단 제목: 홈 외 화면은 메뉴 이름 + 설명 한 줄 (차이 18번)
+  const h1 = document.querySelector(".hero h1"), homeH1 = h1.innerHTML, sub = document.createElement("p");
+  sub.className = "herosub";
+  window.__hero = v => {
+    const m = v != "home" && MEGA[v];
+    if (m) { h1.className = "pageh"; h1.textContent = m[0]; sub.textContent = m[1](); h1.after(sub) }
+    else { h1.removeAttribute("class"); h1.innerHTML = homeH1; sub.remove() }
+  };
+  // 선택 상자: 원본 <select>는 숨기고 React와 같은 모양의 선택 목록을 만들어, 고르면 원본 select 값을 바꾸고 원본이 듣는 input 이벤트를 보냄 (차이 19번)
+  const draws = [];
+  for (const id of ["reg", "exp", "biz", "sort"]) {
+    const s = document.getElementById(id), wrap = document.createElement("div"), btn = document.createElement("button");
+    wrap.className = "sel"; wrap.dataset.sel = id;
+    btn.type = "button"; btn.id = id + "-btn"; btn.className = "selbtn"; btn.setAttribute("aria-haspopup", "listbox");
+    wrap.append(btn);
+    let open = false, active = 0;
+    const opts = () => [...s.options].map(o => [o.value, o.textContent]);
+    const idx = () => Math.max(0, opts().findIndex(([v]) => v === s.value));
+    const draw = () => {
+      btn.textContent = opts()[idx()][1]; btn.setAttribute("aria-expanded", String(open));
+      wrap.querySelector("ul")?.remove();
+      if (!open) return;
+      const ul = document.createElement("ul"); ul.className = "sellist"; ul.setAttribute("role", "listbox");
+      opts().forEach(([v, t], i) => {
+        const li = document.createElement("li"); li.setAttribute("role", "option"); li.dataset.value = v; li.setAttribute("aria-selected", String(i === idx()));
+        if (i === active) li.className = "on";
+        li.textContent = t;
+        // 마우스를 올리면 강조 표시만 옮김 (목록을 새로 만들면 누른 항목과 뗀 항목이 달라져 클릭이 사라짐)
+        li.addEventListener("pointerenter", () => { active = i; [...ul.children].forEach((x, j) => j === i ? x.className = "on" : x.removeAttribute("class")) });
+        li.addEventListener("mousedown", e => e.preventDefault()); li.addEventListener("click", () => pick(i));
+        ul.append(li);
+      });
+      wrap.append(ul);
+    };
+    const pick = i => { open = false; const v = opts()[i][0]; if (v !== s.value) { s.value = v; s.dispatchEvent(new Event("input", { bubbles: true })); s.dispatchEvent(new Event("change", { bubbles: true })) } draw() };
+    btn.addEventListener("click", () => { if (open) open = false; else { active = idx(); open = true } draw() });
+    document.addEventListener("pointerdown", e => { if (open && !wrap.contains(e.target)) { open = false; draw() } });
+    s.style.display = "none";
+    const lab = s.closest("label.sl");
+    if (lab) { // 정렬: <label class="sl">정렬 <select></label> → <div class="sl"><span>정렬</span>…</div>
+      const div = document.createElement("div"), span = document.createElement("span");
+      div.className = "sl"; span.textContent = "정렬"; div.append(span, s, wrap); lab.replaceWith(div);
+    } else s.after(wrap);
+    draws.push(draw);
+  }
+  // 원본 render()가 저장된 조건으로 select 값을 되돌리므로, 그릴 때마다 선택 목록 글자도 맞춤
+  window.__selSync = () => draws.forEach(d => d());
+  (0, eval)('{ const r = render; render = function () { const x = r.apply(this, arguments); window.__selSync(); return x } }');
+  // 모바일 메뉴: ☰ 버튼 · 어두운 배경 · 메뉴 링크와 정책 현황을 감싸는 서랍을 React와 같은 구조로 만들고 같은 동작을 붙임 (차이 21번)
+  {
+    const w = document.querySelector("nav .w"), brand = document.getElementById("navhome");
+    const ico = d => `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"></path></svg>`;
+    const btn = document.createElement("button"), dim = document.createElement("div"), menu = document.createElement("div");
+    btn.type = "button"; btn.className = "navbtn"; btn.setAttribute("aria-controls", "navmenu");
+    dim.setAttribute("aria-hidden", "true"); menu.id = "navmenu";
+    menu.append(...[...w.children].filter(x => x !== brand));
+    w.append(btn, dim, menu);
+    let open = false;
+    const set = v => {
+      open = v;
+      btn.setAttribute("aria-expanded", String(v)); btn.setAttribute("aria-label", v ? "메뉴 닫기" : "메뉴 열기");
+      btn.innerHTML = ico(v ? "M6 6l12 12M18 6L6 18" : "M4 7h16M4 12h16M4 17h16");
+      dim.className = "navdim" + (v ? " open" : ""); menu.className = "navmenu" + (v ? " open" : "");
+      document.documentElement.classList.toggle("navlock", v);
+    };
+    set(false);
+    btn.addEventListener("click", () => set(!open));
+    dim.addEventListener("click", () => set(false));
+    brand.addEventListener("click", () => set(false));
+    menu.addEventListener("click", e => { if (e.target.closest("a,.stats button")) set(false) }, true);
+    document.addEventListener("keydown", e => { if (e.key == "Escape" && open) { set(false); btn.focus() } });
+    document.addEventListener("focusin", e => { if (open && !document.querySelector("nav").contains(e.target)) set(false) });
+    matchMedia("(max-width:720px)").addEventListener("change", e => { if (!e.matches) set(false) });
+  }
+  // 다른 화면으로 가면 달력 날짜 팝업 닫기 + 상단 제목 바꾸기
+  (0, eval)('{ const sv = setView; setView = function (v) { if (v != "cal") calSel = null; const x = sv(v); window.__hero(v); return x } }');
   window.render();
 };
 // 클릭 후 상세 영역 등장 애니메이션(0.2초)이 끝날 때까지 기다림 (연속 클릭 시 타이밍 차이 방지)
 const tap = async (p, sel) => { await p.click(sel); await p.waitForTimeout(250) };
+// 선택 상자에서 값 고르기 (상자를 눌러 목록을 연 뒤 항목 클릭)
+const pick = async (p, id, v) => { await p.click(`[data-sel="${id}"] .selbtn`); await p.waitForTimeout(250); await p.click(`[data-sel="${id}"] [data-value="${v}"]`) };
 
 const desktop = [
   ["home", async p => { }],
@@ -88,8 +175,9 @@ const desktop = [
   ["chip-농지", async p => { await p.click("#cats >> text=농지"); await settle(p, 300) }],
   ["chip-농지-off", async p => { await p.click("#cats >> text=농지"); await settle(p, 300) }],
   ["age", async p => { await p.fill("#age", "32"); await settle(p, 300) }],
-  ["region", async p => { await p.selectOption("#reg", "제주시"); await settle(p, 300) }],
-  ["exp", async p => { await p.selectOption("#exp", "1"); await settle(p, 300) }],
+  ["open-reg", async p => { await p.click('[data-sel="reg"] .selbtn'); await settle(p, 300) }],
+  ["region", async p => { await p.click('[data-sel="reg"] [data-value="제주시"]'); await settle(p, 300) }],
+  ["exp", async p => { await pick(p, "exp", "1"); await settle(p, 300) }],
   ["open-card2", async p => { await p.locator(".card").nth(1).locator("text=자세히 보기").first().click(); await p.mouse.move(5, 890); await settle(p) }],
   ["scroll-card2", async p => { await p.locator(".card").nth(1).scrollIntoViewIfNeeded(); await p.evaluate(() => window.scrollBy(0, 300)); await settle(p, 300) }],
   ["doc-check", async p => { const c = p.locator(".ex input[type=checkbox]").first(); if (await c.count()) await c.click(); await settle(p, 300) }],
@@ -113,7 +201,8 @@ const desktop = [
   ["search-click", async p => { await p.keyboard.type("육"); await settle(p, 500); await p.locator("#ac li").first().click(); await p.mouse.move(5, 890); await settle(p) }],
   ["hide-off", async p => { await p.uncheck("#hide"); await settle(p, 300) }],
   ["reset", async p => { await p.click("#reset"); await settle(p, 300) }],
-  ["sort-due", async p => { await p.selectOption("#sort", "due"); await settle(p, 300) }],
+  ["open-sort", async p => { await p.click('[data-sel="sort"] .selbtn'); await settle(p, 300) }],
+  ["sort-due", async p => { await p.click('[data-sel="sort"] [data-value="due"]'); await settle(p, 300) }],
   ["hideend", async p => { await p.check("#hideend"); await settle(p, 300) }],
   // 쪽 번호가 생기도록 마감 정책 숨기기를 끈 뒤 이동 (정책 데이터가 바뀌어도 시나리오가 멈추지 않게, 버튼이 있을 때만 누름)
   ["hideend-off", async p => { await p.uncheck("#hideend"); await settle(p, 300) }],
@@ -156,7 +245,11 @@ const mobile = [
   ["chip-sts", async p => { await p.click('#sts >> text="마감"'); await settle(p, 300) }],
   ["open-card", async p => { await p.locator(".card").nth(0).locator("text=자세히 보기").first().click(); await settle(p) }],
   ["scroll-ex", async p => { await p.locator(".ex").first().scrollIntoViewIfNeeded(); await settle(p, 300) }],
-  ["cal", async p => { await p.evaluate(() => window.scrollTo(0, 0)); await p.click("#navcal"); await settle(p) }],
+  // 모바일 메뉴: ☰ 버튼으로 서랍을 연 뒤 메뉴 이동 (태블릿 너비에서는 버튼이 없어 막대에서 바로 이동)
+  ["menu-open", async p => { await p.evaluate(() => window.scrollTo(0, 0)); if (await p.isVisible(".navbtn")) await p.click(".navbtn"); await settle(p, 400) }],
+  ["menu-esc", async p => { if (await p.isVisible(".navbtn")) { await p.keyboard.press("Escape"); await settle(p, 400); await p.click(".navbtn"); await settle(p, 400) } }],
+  ["cal", async p => { await p.click("#navcal"); await settle(p) }],
+  ["menu-dim", async p => { if (await p.isVisible(".navbtn")) { await p.click(".navbtn"); await settle(p, 400); await p.mouse.click(30, 400); await settle(p, 400) } }],
   ["cal-day", async p => { await p.locator("#calview .dcell button.day").first().click(); await settle(p, 300) }],
   ["cal-day-r", async p => { await p.locator("#calview .dcell button.day").last().click(); await settle(p, 300) }],
   ["footer", async p => { await p.evaluate(() => window.scrollTo(0, 99999)); await settle(p, 300) }],

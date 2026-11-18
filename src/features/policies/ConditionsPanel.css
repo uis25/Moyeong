@@ -2,7 +2,12 @@
 #top-panel .phead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:var(--space-12);margin-bottom:var(--space-12)}
 #top-panel .phead h2{margin:0}
 #top-panel .phead .hint{margin:0}
-#top-panel .row input,#top-panel .row select{min-height:var(--size-touch);padding:var(--space-10) var(--space-12)}
+#top-panel .row input{min-height:var(--size-touch);padding:var(--space-10) var(--space-12)}
+/* 나이 입력칸 포커스: 선택 상자와 같은 초록 테두리 + 연한 초록 띠 (사이트 공통 주황 테두리 대신) */
+#top-panel .row input:hover{border-color:var(--color-primary)}
+#top-panel .row input:focus-visible{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-soft)}
+/* 이름표와 상자 사이 간격 (이름표가 상자에 붙어 보이지 않게) */
+#top-panel .row label{margin-bottom:var(--space-6)}
 #top-panel .chips{margin-top:var(--space-12)}
 #top-panel .phead+.frow{margin-top:0}
 #top-panel .frow+.row{margin-top:var(--space-16)}
@@ -14,10 +19,9 @@
 #top-panel .flab{width:80px}
 #top-panel .frow #cats,#top-panel .frow #sts{margin-left:0;padding-left:0;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
 #top-panel .row{grid-template-columns:1fr 1fr;gap:var(--space-12) var(--space-8)}
-#top-panel .row select{padding-right:var(--space-4)}
 #top-panel #cats,#top-panel #sts{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:-24px;margin-right:-24px;padding:0 var(--space-24);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 24px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 24px,#000 calc(100% - 32px),transparent)}
 #top-panel #cats::-webkit-scrollbar,#top-panel #sts::-webkit-scrollbar{display:none}
 #top-panel .chip{flex:none;white-space:nowrap}
 }
 .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-12)}
-.row input,.row select{width:100%;min-height:48px;padding:var(--space-12);border:1.5px solid var(--color-line);border-radius:var(--radius-12);background:var(--color-surface)}
+.row input{width:100%;min-height:48px;padding:var(--space-12);border:1.5px solid var(--color-line);border-radius:var(--radius-12);background:var(--color-surface)}

@@ -1,0 +1,16 @@
+/* 선택 상자 (검색 자동완성 목록 .ac 와 같은 모양) */
+.sel{position:relative}
+.selbtn{display:block;width:100%;min-height:var(--size-touch);padding:var(--space-10) var(--space-44) var(--space-10) var(--space-12);border:1.5px solid var(--color-line);border-radius:var(--radius-12);background:var(--color-surface);text-align:left;font-size:var(--font-size-16);line-height:var(--line-height-24);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;position:relative}
+/* ∨ 화살표: 오른쪽 끝에서 16px 띄움, 펼치면 위로 뒤집힘 */
+.selbtn::after{content:"";position:absolute;right:var(--space-16);top:50%;width:8px;height:8px;margin-top:-6px;border-right:2px solid var(--color-text-sub);border-bottom:2px solid var(--color-text-sub);transform:rotate(45deg);transition:transform .15s}
+.selbtn[aria-expanded=true]{border-color:var(--color-primary)}
+.selbtn[aria-expanded=true]::after{margin-top:-2px;transform:rotate(-135deg);border-color:var(--color-primary)}
+.selbtn:hover{border-color:var(--color-primary)}
+/* 포커스: 사이트 공통 주황 테두리 대신 초록 테두리 + 연한 초록 띠 (조건 칸 나이 입력칸과 같은 모양) */
+.selbtn:focus-visible{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-primary-soft)}
+.sellist{position:absolute;z-index:var(--z-dropdown);top:calc(100% + 4px);left:0;min-width:100%;margin:0;padding:var(--space-4);list-style:none;background:var(--color-surface);border:1px solid var(--color-line);border-radius:var(--radius-16);box-shadow:var(--shadow-popover);animation:o .15s}
+.sellist li{display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);min-height:var(--size-touch);padding:var(--space-8) var(--space-12);border-radius:var(--radius-12);cursor:pointer;font-size:var(--font-size-16);line-height:var(--line-height-24);white-space:nowrap}
+.sellist li.on{background:var(--color-primary-soft)}
+/* 지금 선택된 항목: 초록 글자 + ✓ */
+.sellist li[aria-selected=true]{color:var(--color-primary);font-weight:var(--font-weight-bold)}
+.sellist li[aria-selected=true]::after{content:"✓";font-size:var(--font-size-14);line-height:var(--line-height-20)}
