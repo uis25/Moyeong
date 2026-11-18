@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   records: "bmy_rec",     // 신청 기록 {정책id: 진행 상태}
   reviews: "bmy_rv",      // 후기 배열
   userId: "bmy_uid",      // 이 기기의 작성자 id
+  closedGuides: "bmy_guide", // 닫은 이용 가이드의 화면 키 배열 (React에서 추가)
 };
 
 /** JSON 값 읽기 (없거나 읽을 수 없으면 fallback) */

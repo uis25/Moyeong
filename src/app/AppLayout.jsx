@@ -1,11 +1,12 @@
 /*
  * 전체 화면 배치. 원본과 같은 DOM 순서를 유지합니다:
- * 메뉴 → 제목 → [홈 → 검색 → 내 조건 → 달력 → 관심/기록 → 결과 막대 → 목록 → 쪽 번호 → 공식 링크 → 안내] → 사이트 정보
- * 각 영역은 현재 화면(view)에 따라 스스로 보이거나 숨습니다.
+ * 메뉴 → 제목 → [이용 가이드 → 홈 → 검색 → 내 조건 → 달력 → 관심/기록 → 결과 막대 → 목록 → 쪽 번호 → 공식 링크 → 안내] → 사이트 정보
+ * 각 영역은 현재 화면(view)에 따라 스스로 보이거나 숨습니다. (이용 가이드는 원본에 없던 영역, docs/differences.md 24번)
  */
 import Panel from "../components/Panel";
 import NavBar from "../features/navigation/NavBar";
 import Hero from "../features/navigation/Hero";
+import PageGuide from "../features/navigation/PageGuide";
 import SiteFooter from "../features/navigation/SiteFooter";
 import HomeView from "../features/home/HomeView";
 import SearchBox from "../features/policies/SearchBox";
@@ -25,6 +26,7 @@ export default function AppLayout() {
     <NavBar />
     <Hero />
     <main className="w">
+      <PageGuide />
       <HomeView />
       <SearchBox />
       <ConditionsPanel />

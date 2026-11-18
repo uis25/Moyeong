@@ -4,7 +4,7 @@ body[data-view=home] .hero h1{color:var(--color-text)}
 .tang{color:var(--color-tangerine)}
 /* 홈 외 화면: 메뉴 이름 + 설명 한 줄 (지금 어느 화면인지 표시) */
 .hero h1.pageh{margin-bottom:var(--space-8)}
-.herosub{margin:0 0 var(--space-24);color:var(--color-text-sub);font-size:var(--font-size-20);line-height:var(--line-height-28);word-break:keep-all}
+.herosub{margin:0;color:var(--color-text-sub);font-size:var(--font-size-20);line-height:var(--line-height-28);word-break:keep-all}
 @media(min-width:721px){body[data-view=list] .hero h1.pageh,body[data-view=list] .herosub{padding-right:150px}} /* 오른쪽 캐릭터와 겹치지 않게 */
 /* 홈 CTA 버튼 (Button.css의 .btn 보다 뒤에 있어야 함) */
 .herocta{display:none;margin-top:var(--space-8);min-height:56px;padding:0 var(--space-12) 0 var(--space-28);border-radius:var(--radius-pill);gap:var(--space-12)}
@@ -17,5 +17,18 @@ body[data-view=home] .herocta:focus-visible{outline:3px solid var(--color-primar
 body[data-view=home] .herochar,body[data-view=list] .herochar{display:block}
 /* 정책 모아보기: 제목이 한 줄이 되어 영역이 낮아졌으므로 캐릭터를 줄이고 아래 여백까지 내려 위쪽이 메뉴 막대에 잘리지 않게 */
 body[data-view=list] .herochar{width:120px;bottom:-28px}
-@media(max-width:720px){.herochar{position:static;width:112px;margin:-24px 0 var(--space-12) auto}}
+/* 모바일: 캐릭터를 따로 한 줄에 두지 않고 글자 옆 빈 곳에 작게 겹쳐 놓음 (상단 영역 높이 줄이기) */
+@media(max-width:720px){
+.hero{padding-top:var(--space-32)}
+.herosub{font-size:var(--font-size-16);line-height:var(--line-height-24)}
+.herochar{right:var(--space-12);margin:0}
+/* 홈: 'CTA 버튼' 오른쪽 빈 곳 */
+body[data-view=home] .herochar{width:96px;bottom:-8px}
+body[data-view=home] .hero h1{font-size:26px;line-height:36px}
+/* 정책 모아보기: 제목·설명 오른쪽 */
+body[data-view=list] .herochar{width:80px;top:-8px;bottom:auto}
+body[data-view=list] .hero h1.pageh,body[data-view=list] .herosub{padding-right:84px}
+}
+/* 아주 좁은 화면(380px 이하): 홈 버튼 옆에 캐릭터 들어갈 자리가 없어 숨김 (바로 아래 '이렇게 이용하세요' 캐릭터가 이어서 보임) */
+@media(max-width:380px){body[data-view=home] .herochar{display:none}}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .tang{color:var(--color-tangerine-light)}:root:not([data-theme=light]) body[data-view=home] .herocta{color:var(--color-ink-dark)}:root:not([data-theme=light]) .herocta .arr{background:var(--color-ink-dark)}}

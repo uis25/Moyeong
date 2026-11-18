@@ -1,6 +1,6 @@
 /*
  * 스타일 진입점. CSS는 같은 우선순위면 나중 규칙이 이기므로 원본과 같은 결과가 나오도록 순서를 고정합니다.
- * (예: Button.css의 .btn → Hero.css의 .herocta, NavBar.css의 nav a.on → MegaMenu.css의 nav a[aria-expanded])
+ * (예: Button.css의 .btn → Hero.css의 .herocta, NavBar.css의 nav a.on → MobileMenu.css의 .navmenu a.on)
  */
 @import "./tokens.css";
 @import "./base.css";
@@ -16,9 +16,9 @@
 @import "../components/Select.css";
 
 @import "../features/navigation/NavBar.css";
-@import "../features/navigation/MegaMenu.css";
 @import "../features/navigation/MobileMenu.css";
 @import "../features/navigation/Hero.css";
+@import "../features/navigation/PageGuide.css";
 @import "../features/navigation/SiteFooter.css";
 
 @import "../features/policies/SearchBox.css";

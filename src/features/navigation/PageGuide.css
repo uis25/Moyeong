@@ -1,0 +1,31 @@
+/* 화면별 이용 가이드 (제목 아래 연한 초록 상자) */
+.guide{margin:0 0 var(--space-24);padding:var(--space-20) var(--space-24) var(--space-24);border-radius:var(--radius-20);background:var(--color-primary-soft)}
+.guide .ghead{display:flex;align-items:center;justify-content:space-between;gap:var(--space-12);margin:-10px 0 var(--space-12)}
+.guide h2{margin:0;font-size:var(--font-size-16);line-height:var(--line-height-24);font-weight:var(--font-weight-bold);color:var(--color-text)}
+/* 가이드 닫기 ✕ (오른쪽 위) */
+.guide .gclose{display:inline-flex;align-items:center;gap:var(--space-4);flex:none;min-height:var(--size-touch);margin-right:-12px;padding:0 var(--space-12);border:0;border-radius:var(--radius-12);background:none;font:inherit;font-size:var(--font-size-14);line-height:var(--line-height-20);color:var(--color-text-sub);cursor:pointer}
+.guide .gclose:hover{background:var(--color-surface);color:var(--color-text)}
+/* 번호 단계 */
+.guide ol{margin:0;padding:0;list-style:none}
+.gsteps{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-16) var(--space-24)}
+.gsteps li{display:flex;align-items:flex-start;gap:var(--space-12)}
+.gsteps .gnum{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:var(--radius-circle);background:var(--color-primary);color:var(--color-white);font-size:var(--font-size-13);line-height:var(--line-height-none);font-weight:var(--font-weight-bold)}
+.gsteps li>div>b{display:block;font-size:var(--font-size-15);line-height:var(--line-height-24);color:var(--color-text)}
+.gsteps p{margin:var(--space-2) 0 0;font-size:var(--font-size-14);line-height:var(--line-height-20);color:var(--color-text-sub);word-break:keep-all}
+/* 진행 단계 흐름 (신청 기록) */
+.gflow{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-8)}
+.gflow li{display:flex;align-items:center;gap:var(--space-8)}
+.gflow li:not(:last-child)::after{content:"→";color:var(--color-text-sub);font-size:var(--font-size-14);line-height:var(--line-height-20)}
+.gflow span{padding:var(--space-6) var(--space-16);border:1px solid var(--color-line);border-radius:var(--radius-pill);background:var(--color-surface);font-size:var(--font-size-14);line-height:var(--line-height-20);font-weight:var(--font-weight-bold);color:var(--color-text);white-space:nowrap}
+.gtext{margin:var(--space-12) 0 0;font-size:var(--font-size-14);line-height:var(--line-height-20);color:var(--color-text-sub);word-break:keep-all}
+/* 강조 글자: 본문색 · 접수 시작 초록 · 마감 주황 (달력의 시작·마감 색과 같음) */
+.guide p b{color:var(--color-text)}
+.guide p b.gstart{color:var(--color-primary)}
+.guide p b.gend{color:var(--color-danger)}
+/* 닫은 뒤 '이용 가이드 다시 보기' (오른쪽 끝 작은 링크) */
+.guideopen{display:flex;justify-content:flex-end;margin:-12px 0 var(--space-12)}
+.guideopen .lnk{font-size:var(--font-size-14);line-height:var(--line-height-20)}
+@media(max-width:720px){
+.guide{padding:var(--space-16) var(--space-16) var(--space-20)}
+.gsteps{grid-template-columns:1fr}
+}

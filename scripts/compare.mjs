@@ -10,6 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { PNG } from "pngjs";
 import pixelmatch from "pixelmatch";
+import { PAGE_HEADINGS, PAGE_GUIDES } from "../src/constants/navigation.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "compare-results");
@@ -27,11 +28,10 @@ const ORIGINAL_OVERRIDES = [
   // 글꼴 출처 차이(차이 3번): Google Fonts와 npm 패키지의 글꼴 파일이 ◉ 기호를 몇 픽셀 다르게 그림 → 원본 쪽 ◉도 React와 같은 파일로
   // (같은 글꼴 이름·범위가 겹치면 나중에 정의한 @font-face가 먼저 쓰임)
   ...[400, 500, 700, 800].map(w => `@font-face{font-family:"Noto Sans KR";font-weight:${w};font-style:normal;unicode-range:U+25C9;src:url(/node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-96-${w}-normal.woff2) format("woff2")}`),
-  // 요청으로 바꾼 디자인(차이 17~19번: 메뉴 안내판 높이, 화면별 제목, 선택 상자)은 React의 해당 CSS 파일을 원본 쪽에도 그대로 적용
+  // 요청으로 바꾼 디자인(화면별 제목·이용 가이드, 선택 상자, 모바일 메뉴 등)은 React의 해당 CSS 파일을 원본 쪽에도 그대로 적용
   // (원본과 CSS 변수 이름이 달라 React 토큰 파일도 함께 넣음. 변수 정의만 있어 원본의 다른 부분에는 영향 없음)
-  ...["styles/tokens.css", "features/navigation/MegaMenu.css", "features/navigation/MobileMenu.css", "features/navigation/Hero.css", "components/Select.css", "features/policies/ConditionsPanel.css", "features/policies/ResultBar.css"]
+  ...["styles/tokens.css", "features/navigation/MobileMenu.css", "features/navigation/Hero.css", "features/navigation/PageGuide.css", "components/Select.css", "features/policies/ConditionsPanel.css", "features/policies/ResultBar.css"]
     .map(f => fs.readFileSync(path.join(ROOT, "src", f), "utf8")),
-  ".mega .intro .ico{margin-bottom:0}", // React에서 지운 원본 규칙(아이콘 아래 16px 여백)을 원본 쪽에서도 없앰
 ].join("\n");
 // 원본이 카드 HTML을 만드는 card() 함수를 감싸서 같은 변경을 적용 (요소 자체를 빼서 React와 같은 DOM으로 만듦)
 // 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터(P)도 현재 policies.json으로 맞춘 뒤 비교 (코드 동작만 비교)
@@ -39,10 +39,9 @@ const ORIGINAL_OVERRIDES = [
 const escTags = v => typeof v == "string" ? v.replace(/</g, "&lt;").replace(/>/g, "&gt;") : Array.isArray(v) ? v.map(escTags) : v;
 const POLICIES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/constants/policies.json"), "utf8"))
   .map(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, ["description", "details", "eligibilityDetails", "requiredDocuments"].includes(k) ? escTags(v) : v])));
-const ORIGINAL_SCRIPT = policies => {
+const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
   P.splice(0, P.length, ...policies); // 원본 스크립트의 최상위 const P (배열 내용만 교체)
   STS.splice(STS.indexOf("확인 필요"), 1); // 모집 상태 필터 칩에서 "확인 필요" 제거
-  MEGA.list[2].find(x => x[0] == "sts")[2] = "모집 중·마감 임박·접수 예정·마감 상태별 보기"; // 메뉴 안내판 문구도 같이
   const card = window.card;
   window.card = x => card(x)
     // 정책 카드: 자격 판정 배지(첫 번째 배지) 제거
@@ -52,6 +51,8 @@ const ORIGINAL_SCRIPT = policies => {
       `${head}<span class="badge ${{ "모집 중": "ok", "마감 임박": "dd", "접수 예정": "upcoming", "확인 필요": "chk", "마감": "gr" }[st] || "gr"}">${text}</span>`)
     // 공식 링크가 없으면 "공식 링크 없음" 대신 흐린 "공식 공고문 ↗" 버튼
     .replace('<span class="btn s" aria-disabled="true" style="opacity:.45;cursor:default">공식 링크 없음</span>', '<a class="btn s" aria-disabled="true" style="opacity:.45;pointer-events:none">공식 공고문 ↗</a>')
+    // 신청 기간: 날짜가 빠진 쪽은 "?" 대신 있는 정보만 문장으로 (차이 23번)
+    .replace(/<br>신청 \S+ ~ \S+ · /, () => { const s = x.p.applicationStart, e = x.p.applicationEnd; return "<br>신청 " + (s && e ? `${s} ~ ${e}` : e ? `~ ${e} 마감` : s ? `${s}부터 · 마감일 공고 확인` : "기간 공고문 확인") + " · " })
     // 내 조건과 비교: 나이 조건 원문(ageText)이 있으면 숫자 범위 대신 원문 그대로
     .replace(/(<div class="note">정책 기준: 연령 )[^·]*?( · 영농경력)/, (m, a, b) => x.p.ageText ? a + x.p.ageText + b : m)
     // 자세히 보기: 요약이 비면 안내 문구, 요약 아래 "주요 내용" 칸 추가
@@ -79,16 +80,46 @@ const ORIGINAL_SCRIPT = policies => {
   redefine("recBlock", '<div class="note">직접 고르는 진행 상태 (다시 누르면 기록 삭제, 이 기기에만 저장)</div>', "");
   // "이 기기에만 저장" 안내 문구 삭제: 내 조건 칸 설명, 홈 '이렇게 이용하세요' 1단계 (차이 20번)
   document.querySelector("#top-panel .phead .hint").remove();
+  // 전체 초기화 버튼은 "내 조건" 제목 줄 오른쪽에 고정(조건이 없으면 자리만 남기고 숨김), 선택한 조건 태그 줄은 없앰 (차이 22번)
+  {
+    const r = document.createElement("button"); r.className = "ic"; r.id = "reset"; r.textContent = "전체 초기화";
+    document.querySelector("#top-panel .phead").append(r); document.getElementById("tags").remove();
+    redefine("render", '$("tags").innerHTML=(tg.length?`<button class="ic" id="reset">전체 초기화</button>`:"")+tg.map(t=>`<button class="tag" data-rm="${t[0]}" aria-label="${t[1]} 필터 해제">${t[1]} ✕</button>`).join("");',
+      '$("reset").className=tg.length?"ic":"ic off";tg.length?$("reset").removeAttribute("aria-hidden"):$("reset").setAttribute("aria-hidden","true");');
+  }
   redefine("renderHome", "<span>만 나이·영농 지역·영농경력·농업경영체 등록 여부 입력 (이 기기에만 저장)</span>", "<span>만 나이·영농 지역·영농경력·농업경영체 등록 여부 입력</span>");
-  // 메뉴 안내판: 아이콘(24px)과 제목을 한 줄로 (차이 17번)
-  redefine("showMega", '<span class="ico">${svg(MICO[k]).replace(/width="22" height="22"/,\'width="32" height="32"\')}</span><h3>${m[0]}</h3>',
-    '<span class="ttl"><span class="ico">${svg(MICO[k]).replace(/width="22" height="22"/,\'width="24" height="24"\')}</span><h3>${m[0]}</h3></span>');
+  // 메뉴 안내판 없앰: 마우스를 올려도 열지 않고, 메뉴 링크의 팝업 속성도 뺌 (차이 24번)
+  (0, eval)("showMega = function () {}");
+  document.querySelectorAll("nav a[aria-haspopup]").forEach(a => { a.removeAttribute("aria-haspopup"); a.removeAttribute("aria-expanded") });
+  // 화면별 이용 가이드: React의 PageGuide와 같은 구조를 main 맨 앞에 그림. 닫은 화면은 localStorage(bmy_guide)에 저장 (차이 24번)
+  {
+    const main = document.querySelector("main.w"), box = document.createElement("div");
+    box.style.display = "contents"; main.prepend(box);
+    const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+    const rich = parts => parts.map(x => typeof x == "string" ? esc(x) : `<b${x[1] ? ` class="g${x[1]}"` : ""}>${esc(x[0])}</b>`).join("");
+    const load = () => { try { const v = JSON.parse(localStorage.getItem("bmy_guide")); return Array.isArray(v) ? v : [] } catch (e) { return [] } };
+    let cur = "home";
+    window.__guide = (v, focus) => {
+      cur = v; const g = guides[v], closed = load().includes(v);
+      box.innerHTML = !g ? "" : closed ? '<div class="guideopen"><button type="button" class="lnk">이용 가이드 다시 보기</button></div>'
+        : `<section class="guide" aria-labelledby="guide-h"><div class="ghead"><h2 id="guide-h">${esc(g.title)}</h2><button type="button" class="gclose">가이드 닫기<span aria-hidden="true">✕</span></button></div>`
+          + (g.flow ? `<ol class="gflow">${g.flow.map(x => `<li><span>${esc(x)}</span></li>`).join("")}</ol><p class="gtext">${rich(g.text)}</p>`
+            : `<ol class="gsteps">${g.steps.map(([t, d], i) => `<li><span class="gnum" aria-hidden="true">${i + 1}</span><div><b>${esc(t)}</b><p>${rich(d)}</p></div></li>`).join("")}</ol>`) + "</section>";
+      if (focus) box.querySelector("button")?.focus();
+    };
+    box.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const close = b.classList.contains("gclose"), list = load().filter(x => x != cur);
+      localStorage.setItem("bmy_guide", JSON.stringify(close ? [...list, cur] : list));
+      window.__guide(cur, true);
+    });
+  }
   // 상단 제목: 홈 외 화면은 메뉴 이름 + 설명 한 줄 (차이 18번)
   const h1 = document.querySelector(".hero h1"), homeH1 = h1.innerHTML, sub = document.createElement("p");
   sub.className = "herosub";
   window.__hero = v => {
-    const m = v != "home" && MEGA[v];
-    if (m) { h1.className = "pageh"; h1.textContent = m[0]; sub.textContent = m[1](); h1.after(sub) }
+    const m = v != "home" && headings[v];
+    if (m) { h1.className = "pageh"; h1.textContent = m[0]; sub.textContent = m[1]; h1.after(sub) }
     else { h1.removeAttribute("class"); h1.innerHTML = homeH1; sub.remove() }
   };
   // 선택 상자: 원본 <select>는 숨기고 React와 같은 모양의 선택 목록을 만들어, 고르면 원본 select 값을 바꾸고 원본이 듣는 input 이벤트를 보냄 (차이 19번)
@@ -131,15 +162,18 @@ const ORIGINAL_SCRIPT = policies => {
   // 원본 render()가 저장된 조건으로 select 값을 되돌리므로, 그릴 때마다 선택 목록 글자도 맞춤
   window.__selSync = () => draws.forEach(d => d());
   (0, eval)('{ const r = render; render = function () { const x = r.apply(this, arguments); window.__selSync(); return x } }');
-  // 모바일 메뉴: ☰ 버튼 · 어두운 배경 · 메뉴 링크와 정책 현황을 감싸는 서랍을 React와 같은 구조로 만들고 같은 동작을 붙임 (차이 21번)
+  // 모바일 메뉴: ☰ 버튼 · 어두운 배경 · 메뉴 링크를 감싸는 서랍을 React와 같은 구조로 만들고 같은 동작을 붙임 (차이 21번)
   {
     const w = document.querySelector("nav .w"), brand = document.getElementById("navhome");
     const ico = d => `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"></path></svg>`;
     const btn = document.createElement("button"), dim = document.createElement("div"), menu = document.createElement("div");
     btn.type = "button"; btn.className = "navbtn"; btn.setAttribute("aria-controls", "navmenu");
     dim.setAttribute("aria-hidden", "true"); menu.id = "navmenu";
-    menu.append(...[...w.children].filter(x => x !== brand));
-    w.append(btn, dim, menu);
+    const stats = w.querySelector(".stats");
+    menu.append(...[...w.children].filter(x => x !== brand && x !== stats));
+    w.append(btn, dim, menu, stats); // 정책 현황 숫자는 서랍 밖 (로고 옆)
+    // "마감 임박(7일 이내)" → <span>마감 임박<span class="nsub">(7일 이내)</span></span> (모바일에서 괄호 부분만 숨김)
+    { const t = [...document.querySelector("#s2").parentNode.childNodes].find(n => n.nodeType == 3 && n.textContent == "마감 임박(7일 이내)"); const w = document.createElement("span"), sp = document.createElement("span"); sp.className = "nsub"; sp.textContent = "(7일 이내)"; w.append("마감 임박", sp); t.replaceWith(w) }
     let open = false;
     const set = v => {
       open = v;
@@ -152,13 +186,14 @@ const ORIGINAL_SCRIPT = policies => {
     btn.addEventListener("click", () => set(!open));
     dim.addEventListener("click", () => set(false));
     brand.addEventListener("click", () => set(false));
-    menu.addEventListener("click", e => { if (e.target.closest("a,.stats button")) set(false) }, true);
+    menu.addEventListener("click", e => { if (e.target.closest("a")) set(false) }, true);
+    stats.addEventListener("click", () => set(false), true);
     document.addEventListener("keydown", e => { if (e.key == "Escape" && open) { set(false); btn.focus() } });
     document.addEventListener("focusin", e => { if (open && !document.querySelector("nav").contains(e.target)) set(false) });
     matchMedia("(max-width:720px)").addEventListener("change", e => { if (!e.matches) set(false) });
   }
   // 다른 화면으로 가면 달력 날짜 팝업 닫기 + 상단 제목 바꾸기
-  (0, eval)('{ const sv = setView; setView = function (v) { if (v != "cal") calSel = null; const x = sv(v); window.__hero(v); return x } }');
+  (0, eval)('{ const sv = setView; setView = function (v) { if (v != "cal") calSel = null; const x = sv(v); window.__hero(v); window.__guide(v); return x } }');
   window.render();
 };
 // 클릭 후 상세 영역 등장 애니메이션(0.2초)이 끝날 때까지 기다림 (연속 클릭 시 타이밍 차이 방지)
@@ -168,9 +203,7 @@ const pick = async (p, id, v) => { await p.click(`[data-sel="${id}"] .selbtn`); 
 
 const desktop = [
   ["home", async p => { }],
-  ["hover-mega", async p => { await p.hover("#navpol"); await settle(p, 400) }],
-  ["hover-mega-cal", async p => { await p.hover("#navcal"); await settle(p, 400) }],
-  ["leave-mega", async p => { await p.mouse.move(600, 600); await settle(p, 500) }],
+  ["hover-nav", async p => { await p.hover("#navpol"); await settle(p, 400) }], // 메뉴에 마우스를 올려도 안내판이 열리지 않음
   ["hero-cta", async p => { await p.click("#herocta"); await p.mouse.move(5, 890); await settle(p) }],
   ["chip-농지", async p => { await p.click("#cats >> text=농지"); await settle(p, 300) }],
   ["chip-농지-off", async p => { await p.click("#cats >> text=농지"); await settle(p, 300) }],
@@ -234,8 +267,11 @@ const desktop = [
   ["home-now", async p => { await p.locator(".nowc").first().click(); await p.mouse.move(5, 890); await settle(p, 1200) }],
   ["stats-due", async p => { await p.click("nav .stats >> text=마감 임박"); await p.mouse.move(5, 890); await settle(p) }],
   ["nav-cond", async p => { await p.click("#navcond"); await p.mouse.move(5, 890); await settle(p) }],
-  ["tag-remove", async p => { const t = p.locator("#tags .tag").first(); if (await t.count()) await t.click(); await settle(p, 300) }],
-  ["mega-intro", async p => { await p.click("#navhome"); await p.hover("#navrec"); await settle(p, 300); await p.click("#mega .intro"); await p.mouse.move(5, 890); await settle(p) }],
+  // 이용 가이드 닫기 → 다른 화면은 그대로 열림 → 다시 보기
+  ["guide-close", async p => { await p.click("#navcal"); await p.mouse.move(5, 890); await settle(p); await p.click(".guide .gclose"); await settle(p, 300) }],
+  ["guide-other", async p => { await p.click("#navrec"); await p.mouse.move(5, 890); await settle(p) }],
+  ["guide-back", async p => { await p.click("#navcal"); await p.mouse.move(5, 890); await settle(p) }],
+  ["guide-reopen", async p => { await p.click(".guideopen .lnk"); await settle(p, 300) }],
 ];
 const mobile = [
   ["home", async p => { }],
@@ -294,7 +330,7 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     pages[k].on("pageerror", e => console.log(`[${label}/${k}] pageerror`, e.message));
     pages[k].on("console", m => { if (m.type() == "error" || m.type() == "warning") console.log(`[${label}/${k}] console.${m.type()}`, m.text().slice(0, 200)) });
     await pages[k].goto(URLS[k], { waitUntil: "networkidle" }); await pages[k].evaluate(() => document.fonts.ready);
-    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT, POLICIES) }
+    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT, { policies: POLICIES, headings: PAGE_HEADINGS, guides: PAGE_GUIDES }) }
     // 브라우저의 스크롤 고정(scroll anchoring)은 양쪽 모두 끄고 비교.
     // 원본은 화면을 다시 그릴 때마다 요소를 새로 만들어 이 기능이 거의 동작하지 않았고, React는 요소를 유지해 동작함 (docs/differences.md)
     await pages[k].addStyleTag({ content: "*{overflow-anchor:none!important}" });
