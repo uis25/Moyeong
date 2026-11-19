@@ -25,6 +25,7 @@ const settle = (p, ms = 900) => p.waitForTimeout(ms);
 // 원본에서 의도적으로 바꾼 부분(docs/differences.md)은 원본 쪽에 같은 변경을 CSS로 적용한 뒤 비교
 const ORIGINAL_OVERRIDES = [
   ".upcoming{background:var(--g2);color:var(--g);opacity:.45}", // 접수 예정 배지 (흐린 초록)
+  ".ex{overflow-wrap:anywhere}", // 자세히 보기: 띄어쓰기 없는 긴 글자도 줄바꿈 (차이 27번)
   // 글꼴 출처 차이(차이 3번): Google Fonts와 npm 패키지의 글꼴 파일이 ◉ 기호를 몇 픽셀 다르게 그림 → 원본 쪽 ◉도 React와 같은 파일로
   // (같은 글꼴 이름·범위가 겹치면 나중에 정의한 @font-face가 먼저 쓰임)
   ...[400, 500, 700, 800].map(w => `@font-face{font-family:"Noto Sans KR";font-weight:${w};font-style:normal;unicode-range:U+25C9;src:url(/node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-96-${w}-normal.woff2) format("woff2")}`),
@@ -55,13 +56,10 @@ const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
     .replace(/<br>신청 \S+ ~ \S+ · /, () => { const s = x.p.applicationStart, e = x.p.applicationEnd; return "<br>신청 " + (s && e ? `${s} ~ ${e}` : e ? `~ ${e} 마감` : s ? `${s}부터 · 마감일 공고 확인` : "기간 공고문 확인") + " · " })
     // 내 조건과 비교: 나이 조건 원문(ageText)이 있으면 숫자 범위 대신 원문 그대로
     .replace(/(<div class="note">정책 기준: 연령 )[^·]*?( · 영농경력)/, (m, a, b) => x.p.ageText ? a + x.p.ageText + b : m)
-    // 자세히 보기: 요약이 비면 안내 문구, 요약 아래 "주요 내용" 칸 추가
-    .replace(/<div class="ex"><p style="margin:0">[\s\S]*?<\/p>/, () => {
-      const p = x.p, D = p.details || [];
-      return '<div class="ex">' + (p.description ? `<p style="margin:0">${hl(p.description)}</p>` : '<p class="meta" style="margin:0">확인된 요약 없음. 공식 공고를 확인하십시오.</p>')
-        + '<h4>주요 내용</h4>' + (D.length ? `<ul>${D.map(t => `<li>${hl(t)}</li>`).join("")}</ul>` : '<div class="meta">확인된 내용 없음. 공식 공고를 확인하십시오.</div>')
-        + (p.detailsMore ? '<div class="meta">자세한 내용은 공식 공고문과 첨부 파일을 확인하십시오.</div>' : '');
-    });
+    // 자세히 보기: 요약이 비면 안내 문구 (차이 13번)
+    .replace(/<div class="ex"><p style="margin:0">[\s\S]*?<\/p>/, () => '<div class="ex">' + (x.p.description ? `<p style="margin:0">${hl(x.p.description)}</p>` : '<p class="meta" style="margin:0">확인된 요약 없음. 공식 공고를 확인하십시오.</p>'))
+    // 자세히 보기: "신청 대상 및 자격" 칸을 빼고 "내 조건과 비교"만 전체 폭으로 (차이 26번)
+    .replace(/<div class="ex2"><div class="exc"><h4>신청 대상 및 자격<\/h4>[\s\S]*?<\/div><div class="exc">(<h4>내 조건과 비교[\s\S]*?<div class="note">정책 기준:[^<]*<\/div>)<\/div><\/div>/, "$1");
   // 목록 정렬: 모집 상태 순서(마감 임박·모집 중 → 접수 예정 → 확인 필요 → 마감) 추가.
   // 원본 render() 안의 정렬 부분만 바꿔 같은 이름으로 다시 정의 (render를 부르는 다른 함수들도 새 render를 씀)
   const SORT_OLD = 'L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;if(so=="due"){if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||b.e.score-a.e.score});';
