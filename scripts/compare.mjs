@@ -4,13 +4,15 @@
 // 단계마다 스크린샷 픽셀 · 보이는 모든 요소의 계산된 스타일 · 화면 텍스트 · 스크롤 위치 · localStorage 를 비교하고,
 // 다른 단계가 있으면 compare-results/ 에 원본/React/차이 이미지를 저장합니다.
 import { chromium } from "playwright";
-import { createServer } from "vite";
+import { createServer, loadEnv } from "vite";
+import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { PNG } from "pngjs";
 import pixelmatch from "pixelmatch";
 import { PAGE_HEADINGS, PAGE_GUIDES } from "../src/constants/navigation.js";
+import { rowToPolicy } from "../src/services/policyMapping.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "compare-results");
@@ -38,7 +40,12 @@ const ORIGINAL_OVERRIDES = [
 // 정책 데이터는 원본 이후 갱신될 수 있으므로, 원본 쪽 데이터(P)도 현재 policies.json으로 맞춘 뒤 비교 (코드 동작만 비교)
 // 원본은 글자를 HTML로 그대로 끼워 넣어 원문의 "<P. 26>" 같은 표기가 태그로 읽혀 사라짐 → 원본 쪽 데이터만 < > 를 기호로 바꿔 비교 (React는 원래 기호 그대로 표시)
 const escTags = v => typeof v == "string" ? v.replace(/</g, "&lt;").replace(/>/g, "&gt;") : Array.isArray(v) ? v.map(escTags) : v;
-const POLICIES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/constants/policies.json"), "utf8"))
+// 정책 데이터는 React 앱과 같은 곳(Supabase policies 테이블)에서 읽음
+const env = loadEnv("development", ROOT, "VITE_");
+const { data: policyRows, error: policyError } = await createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_PUBLISHABLE_KEY)
+  .from("policies").select("*").order("sort_order");
+if (policyError) throw policyError;
+const POLICIES = policyRows.map(rowToPolicy)
   .map(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, ["description", "details", "eligibilityDetails", "requiredDocuments"].includes(k) ? escTags(v) : v])));
 const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
   P.splice(0, P.length, ...policies); // 원본 스크립트의 최상위 const P (배열 내용만 교체)

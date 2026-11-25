@@ -5,3 +5,8 @@ dist
 
 # 비교 스크립트 결과물 (스크린샷·차이 이미지)
 compare-results
+
+# 환경변수 (Supabase 키 등)
+.env
+.env.*
+!.env.example

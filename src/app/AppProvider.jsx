@@ -17,7 +17,7 @@ import { saveDocumentCheck } from "../services/documentsService";
 import { saveRecord, removeRecord } from "../services/recordsService";
 
 export default function AppProvider({ initial, children }) {
-  const { policies, userId } = initial;
+  const { policies, sources, userId } = initial;
   const [conditions, setConditions] = useState(initial.conditions);
   const [favorites, setFavorites] = useState(initial.favorites);
   const [documents, setDocuments] = useState(initial.documents);
@@ -133,7 +133,7 @@ export default function AppProvider({ initial, children }) {
     await saveConditions(next);
   }
   const value = {
-    policies, userId, initialReviews: initial.reviews, conditions, favorites, documents, records, view, openId, queryInput, query, sort, hideMismatch, hideClosed,
+    policies, sources, userId, initialReviews: initial.reviews, conditions, favorites, documents, records, view, openId, queryInput, query, sort, hideMismatch, hideClosed,
     QX, QRE, list, page: currentPage, totalPages, statuses, refs,
     goView, scrollToListTop, search, changeQueryInput, clearQuery,
     changeCondition, toggleFilter, resetAll, changeSort, changeHideMismatch, changeHideClosed, changePage,
