@@ -1,9 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// GitHub Pages(https://uis25.github.io/Moyeong/)는 저장소 이름 아래에 열리므로 빌드할 때만 base를 맞춤
-// 개발 서버와 비교 스크립트(npm run compare)는 지금처럼 "/" 사용
-export default defineConfig(({ command }) => ({
+// Vercel에 배포 (main에 push하면 Vercel이 직접 빌드). 사이트가 주소 맨 앞(/)에서 열림
+export default defineConfig({
   plugins: [react()],
-  base: command === "build" ? "/Moyeong/" : "/",
-}));
+});
