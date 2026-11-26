@@ -339,6 +339,8 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     // 브라우저의 스크롤 고정(scroll anchoring)은 양쪽 모두 끄고 비교.
     // 원본은 화면을 다시 그릴 때마다 요소를 새로 만들어 이 기능이 거의 동작하지 않았고, React는 요소를 유지해 동작함 (docs/differences.md)
     await pages[k].addStyleTag({ content: "*{overflow-anchor:none!important}" });
+    // 의견 남기기 버튼·창은 원본에 없는 기능이라 React 쪽에서 숨기고 비교 (docs/differences.md 28번)
+    if (k == "react") await pages[k].addStyleTag({ content: ".fbbtn,.fbdlg{display:none!important}" });
     await settle(pages[k], 500);
   }
   let bad = 0;

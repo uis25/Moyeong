@@ -18,6 +18,7 @@ import OfficialSources from "../features/policies/OfficialSources";
 import CalendarView from "../features/calendar/CalendarView";
 import FavoritesView from "../features/favorites/FavoritesView";
 import RecordsView from "../features/records/RecordsView";
+import FeedbackButton from "../features/feedback/FeedbackButton";
 import { useApp } from "./AppContext";
 
 export default function AppLayout() {
@@ -42,5 +43,7 @@ export default function AppLayout() {
       <footer>⚠ 정책 정보는 공개된 공고·보도자료를 바탕으로 정리한 것이며 확인일은 카드에 표시됩니다. 신청 기간과 자격은 바뀔 수 있습니다. 조건 비교는 참고용이며 공식 자격 심사가 아닙니다. 최종 신청 자격은 반드시 공식 공고문에서 확인하시기 바랍니다.</footer>
     </main>
     <SiteFooter />
+    {/* 모든 화면에서 오른쪽 아래에 떠 있는 의견 남기기 버튼 (원본에 없던 기능, docs/differences.md 28번) */}
+    <FeedbackButton />
   </>;
 }

@@ -135,6 +135,8 @@
 
   /* 크기 */
   --size-touch: 44px;
+  --size-fab: 64px;      /* 의견 남기기 버튼 */
+  --size-fab-sm: 52px;   /* 의견 남기기 버튼 (모바일) */
 
   /* 흐림 (비활성·예정 표시) */
   --opacity-disabled: .45;
@@ -143,6 +145,8 @@
   --z-dropdown: 30;
   --z-nav: 5;
   --z-popover: 20;
+  --z-fab: 4;     /* 떠 있는 의견 남기기 버튼: 상단바·모바일 메뉴(5)보다 아래 */
+  --z-modal: 40;  /* 의견 작성 창: 모든 요소 위 */
 }
 
 @media (prefers-color-scheme: dark) {

@@ -1,0 +1,48 @@
+/* 의견 남기기: 오른쪽 아래 고정 캐릭터 버튼 + 작성 창 */
+
+/* 버튼 (모바일 메뉴가 열리면 어두운 배경 아래로 가려지도록 메뉴보다 낮은 z-index) */
+.fbbtn{position:fixed;right:var(--space-20);bottom:var(--space-20);z-index:var(--z-fab);width:var(--size-fab);height:var(--size-fab);padding:0;border:2px solid var(--color-white);border-radius:var(--radius-circle);overflow:hidden;background:var(--color-white);box-shadow:var(--shadow-popover);cursor:pointer;transition:transform .2s}
+.fbbtn img{display:block;width:100%;height:100%;object-fit:cover}
+.fbbtn:hover{transform:translateY(-4px) rotate(-6deg)}
+.fbbtn:active{transform:scale(.95)}
+
+/* 작성 창: 버튼 바로 위에 작은 창으로 */
+.fbdlg{position:fixed;inset:auto var(--space-20) calc(var(--space-20) + var(--size-fab) + var(--space-12)) auto;z-index:var(--z-modal);margin:0;width:min(380px,calc(100vw - 2 * var(--space-20)));max-height:calc(100vh - var(--size-fab) - 2 * var(--space-32));padding:0;overflow-y:auto;background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-line);border-radius:var(--radius-16);box-shadow:var(--shadow-popover)}
+.fbdlg[open]{animation:fbup .2s}
+.fbdlg::backdrop{background:var(--color-scrim)}
+@keyframes fbup{from{opacity:0;transform:translateY(var(--space-8))}}
+.fbin{padding:var(--space-20)}
+
+.fbhead{display:flex;align-items:center;justify-content:space-between;margin:calc(-1 * var(--space-6)) 0 var(--space-8)}
+.fbhead h2{margin:0;font-size:var(--font-size-20);line-height:var(--line-height-28);font-weight:var(--font-weight-extrabold)}
+.fbx{display:grid;place-items:center;width:var(--size-touch);height:var(--size-touch);margin-right:calc(-1 * var(--space-10));padding:0;border:0;border-radius:var(--radius-12);background:none;color:var(--color-text-sub);font-size:var(--font-size-17);cursor:pointer}
+.fbx:hover{background:var(--color-primary-soft);color:var(--color-text)}
+
+.fbdlg fieldset{margin:0 0 var(--space-16);padding:0;border:0;min-width:0}
+.fbdlg legend,.fblabel{display:block;margin:0 0 var(--space-8);padding:0;font-size:var(--font-size-15);line-height:var(--line-height-20);font-weight:var(--font-weight-bold);color:var(--color-text)}
+.fbdlg .chips{margin-top:0}
+.fbrate .chip{padding:0 var(--space-14);font-size:var(--font-size-22)}
+
+.fbdlg textarea{display:block;width:100%;min-height:112px;padding:var(--space-12);border:1.5px solid var(--color-line);border-radius:var(--radius-12);background:var(--color-surface);color:var(--color-text);font:inherit;font-size:var(--font-size-15);line-height:var(--line-height-24);resize:vertical}
+.fbcount{margin-top:var(--space-4);text-align:right;font-size:var(--font-size-13);line-height:var(--line-height-20);color:var(--color-text-sub)}
+.fberr{margin:var(--space-8) 0 0;font-size:var(--font-size-14);line-height:var(--line-height-20);color:var(--color-danger)}
+.fbsubmit{width:100%;margin-top:var(--space-16)}
+
+/* 완료 화면 */
+.fbdone{padding:var(--space-16) 0 var(--space-8);text-align:center;outline:none}
+.fbdone img{display:block;margin:0 auto var(--space-12);border-radius:var(--radius-circle)}
+.fbdone-t{margin:0 0 var(--space-4);font-size:var(--font-size-20);line-height:var(--line-height-28);font-weight:var(--font-weight-extrabold)}
+.fbdone .meta{margin:0}
+
+/* 모바일: 버튼은 조금 작게, 창은 화면 아래에 꽉 찬 너비로 */
+@media(max-width:720px){
+  .fbbtn{right:var(--space-16);bottom:var(--space-16);width:var(--size-fab-sm);height:var(--size-fab-sm)}
+  .fbdlg{inset:auto 0 0 0;width:100%;max-width:none;max-height:88vh;border-width:1px 0 0;border-radius:var(--radius-20) var(--radius-20) 0 0}
+  .fbin{padding-bottom:calc(var(--space-20) + env(safe-area-inset-bottom))}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .fbbtn{transition:none}
+  .fbbtn:hover,.fbbtn:active{transform:none}
+  .fbdlg[open]{animation:none}
+}
