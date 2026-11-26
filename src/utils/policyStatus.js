@@ -1,12 +1,12 @@
 // 정책의 모집 상태 · 마감일 계산
-import { TODAY } from "./date";
+import { TODAY, parseYmd } from "./date";
 
 /** 마감까지 남은 일수 (오늘 마감이면 0) */
-export function dday(p) { return Math.round((new Date(p.applicationEnd) - TODAY) / 864e5) }
+export function dday(p) { return Math.round((parseYmd(p.applicationEnd) - TODAY) / 864e5) }
 
 /** 모집 상태: 확인 필요 · 접수 예정 · 마감 · 마감 임박(7일 이내) · 모집 중 */
 export function status(p) {
-  const s = p.applicationStart && new Date(p.applicationStart), e = p.applicationEnd && new Date(p.applicationEnd);
+  const s = parseYmd(p.applicationStart), e = parseYmd(p.applicationEnd); // 현지 0시 (시작일 당일 = 모집 중, docs/differences.md 29번)
   if (!e) return "확인 필요"; if (s && TODAY < s) return "접수 예정"; if (TODAY > e) return "마감"; return dday(p) <= 7 ? "마감 임박" : "모집 중"
 }
 

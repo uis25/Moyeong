@@ -48,6 +48,10 @@ if (policyError) throw policyError;
 const POLICIES = policyRows.map(rowToPolicy)
   .map(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, ["description", "details", "eligibilityDetails", "requiredDocuments"].includes(k) ? escTags(v) : v])));
 const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
+  // 날짜 문자열을 현지 0시로 읽도록 원본 status·dday도 같이 고침 (시작일 당일 = 모집 중, 차이 29번)
+  const localDay = s => { const [y, m, d] = s.split("-"); return new Date(+y, m - 1, +d) };
+  window.dday = p => Math.round((localDay(p.applicationEnd) - TODAY) / 864e5);
+  window.status = p => { const s = p.applicationStart && localDay(p.applicationStart), e = p.applicationEnd && localDay(p.applicationEnd); if (!e) return "확인 필요"; if (s && TODAY < s) return "접수 예정"; if (TODAY > e) return "마감"; return dday(p) <= 7 ? "마감 임박" : "모집 중" };
   P.splice(0, P.length, ...policies); // 원본 스크립트의 최상위 const P (배열 내용만 교체)
   STS.splice(STS.indexOf("확인 필요"), 1); // 모집 상태 필터 칩에서 "확인 필요" 제거
   const card = window.card;

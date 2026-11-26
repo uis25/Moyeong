@@ -2,11 +2,12 @@
 import { evaluate } from "./eligibility";
 import { status } from "./policyStatus";
 import { queryScore } from "./search";
+import { parseYmd } from "./date";
 
 const RANK = { ok: 0, unknown: 1, no: 2 };
 /** 모집 상태 순서 (작을수록 위). 원본은 "마감은 맨 뒤"만 있었고 나머지 상태는 구분하지 않았음 (docs/differences.md) */
 const STATUS_ORDER = { "마감 임박": 0, "모집 중": 0, "접수 예정": 1, "확인 필요": 2, "마감": 3 };
-const endTime = p => p.applicationEnd ? +new Date(p.applicationEnd) : Infinity;
+const endTime = p => p.applicationEnd ? +parseYmd(p.applicationEnd) : Infinity;
 
 /**
  * 화면에 보여 줄 정책 목록 [{ p, e(판정), st(상태), qs(검색 점수) }]
