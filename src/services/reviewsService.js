@@ -2,14 +2,15 @@
 // 후기 형태: { id, policyId, authorId, rating(1~5), keywords[], content, createdAt("YYYY-MM-DD"), updatedAt }
 import { readJSON, writeJSON, STORAGE_KEYS } from "./storage";
 import { LEGACY_KEYWORDS } from "../constants/reviews";
+import SAMPLE_REVIEWS from "../constants/sampleReviews.json";
 
 // 예전 버전 키워드 이름을 현재 이름으로 바꿈
 const fixKeywords = a => Array.isArray(a) ? a.map(k => LEGACY_KEYWORDS[k] || k) : a;
 const load = () => readJSON(STORAGE_KEYS.reviews, []).map(r => r && typeof r == "object" ? { ...r, keywords: fixKeywords(r.keywords) } : r);
 
-/** 전체 후기 */
+/** 전체 후기 = 시연용 예시 후기(authorId "sample-…", 저장하지 않음) + 이 기기에 저장된 후기 */
 export async function getReviews() {
-  return load();
+  return [...SAMPLE_REVIEWS, ...load()];
 }
 
 /** 후기 저장. 같은 작성자가 같은 정책에 쓴 후기가 있으면 수정(id 유지), 없으면 추가 → 바뀐 전체 */

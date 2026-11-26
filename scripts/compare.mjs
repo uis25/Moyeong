@@ -13,6 +13,7 @@ import { PNG } from "pngjs";
 import pixelmatch from "pixelmatch";
 import { PAGE_HEADINGS, PAGE_GUIDES } from "../src/constants/navigation.js";
 import { rowToPolicy } from "../src/services/policyMapping.js";
+const SAMPLE_REVIEWS = JSON.parse(fs.readFileSync(new URL("../src/constants/sampleReviews.json", import.meta.url), "utf8"));
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "compare-results");
@@ -47,7 +48,11 @@ const { data: policyRows, error: policyError } = await createClient(env.VITE_SUP
 if (policyError) throw policyError;
 const POLICIES = policyRows.map(rowToPolicy)
   .map(p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, ["description", "details", "eligibilityDetails", "requiredDocuments"].includes(k) ? escTags(v) : v])));
-const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
+const ORIGINAL_SCRIPT = ({ policies, headings, guides, samples }) => {
+  // 시연용 예시 후기(차이 31번): 원본 메모리 후기 목록 앞에 넣고, localStorage에는 저장되지 않게 (React와 같은 동작)
+  const lsSet = ls.set;
+  ls.set = (k, v) => lsSet(k, k == "bmy_rv" && Array.isArray(v) ? v.filter(r => !String(r.authorId).startsWith("sample-")) : v);
+  UR.unshift(...samples);
   // 날짜 문자열을 현지 0시로 읽도록 원본 status·dday도 같이 고침 (시작일 당일 = 모집 중, 차이 29번)
   const localDay = s => { const [y, m, d] = s.split("-"); return new Date(+y, m - 1, +d) };
   window.dday = p => Math.round((localDay(p.applicationEnd) - TODAY) / 864e5);
@@ -70,7 +75,10 @@ const ORIGINAL_SCRIPT = ({ policies, headings, guides }) => {
     // 자세히 보기: 요약이 비면 안내 문구 (차이 13번)
     .replace(/<div class="ex"><p style="margin:0">[\s\S]*?<\/p>/, () => '<div class="ex">' + (x.p.description ? `<p style="margin:0">${hl(x.p.description)}</p>` : '<p class="meta" style="margin:0">확인된 요약 없음. 공식 공고를 확인하십시오.</p>'))
     // 자세히 보기: "신청 대상 및 자격" 칸을 빼고 "내 조건과 비교"만 전체 폭으로 (차이 26번)
-    .replace(/<div class="ex2"><div class="exc"><h4>신청 대상 및 자격<\/h4>[\s\S]*?<\/div><div class="exc">(<h4>내 조건과 비교[\s\S]*?<div class="note">정책 기준:[^<]*<\/div>)<\/div><\/div>/, "$1");
+    .replace(/<div class="ex2"><div class="exc"><h4>신청 대상 및 자격<\/h4>[\s\S]*?<\/div><div class="exc">(<h4>내 조건과 비교[\s\S]*?<div class="note">정책 기준:[^<]*<\/div>)<\/div><\/div>/, "$1")
+    // 예시 후기에는 "예시 후기" 배지 (차이 31번). 예시 후기는 정책마다 작성일이 서로 달라 날짜로 구분
+    .replace(/(<span class="meta">(\d{4}-\d{2}-\d{2})<\/span>)(?=<div class="chips")/g, (m, span, d) =>
+      samples.some(r => r.policyId == x.p.id && r.createdAt == d) ? span + ' <span class="badge gr">예시 후기</span>' : m);
   // 목록 정렬: 모집 상태 순서(마감 임박·모집 중 → 접수 예정 → 확인 필요 → 마감) 추가.
   // 원본 render() 안의 정렬 부분만 바꿔 같은 이름으로 다시 정의 (render를 부르는 다른 함수들도 새 render를 씀)
   const SORT_OLD = 'L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;if(so=="due"){if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||b.e.score-a.e.score});';
@@ -281,6 +289,9 @@ const desktop = [
   ["guide-other", async p => { await p.click("#navrec"); await p.mouse.move(5, 890); await settle(p) }],
   ["guide-back", async p => { await p.click("#navcal"); await p.mouse.move(5, 890); await settle(p) }],
   ["guide-reopen", async p => { await p.click(".guideopen .lnk"); await settle(p, 300) }],
+  // 시연용 예시 후기가 있는 정책을 펼쳐 후기 목록까지 비교 (차이 31번)
+  ["sample-rv-card", async p => { await p.click("#navpol"); await p.fill("#q", "영농정착지원사업"); await p.click("#goto"); await settle(p); await p.locator(".card", { hasText: "청년농업인 영농정착지원사업" }).first().locator("text=자세히 보기").first().click(); await p.mouse.move(5, 890); await settle(p) }],
+  ["sample-rv-list", async p => { await tap(p, ".rv >> text=자세히 보기"); await p.locator(".rv .rvi").first().scrollIntoViewIfNeeded(); await settle(p, 300) }],
 ];
 const mobile = [
   ["home", async p => { }],
@@ -339,7 +350,7 @@ async function run(browser, label, steps, ctxOpts, fullPage = false) {
     pages[k].on("pageerror", e => console.log(`[${label}/${k}] pageerror`, e.message));
     pages[k].on("console", m => { if (m.type() == "error" || m.type() == "warning") console.log(`[${label}/${k}] console.${m.type()}`, m.text().slice(0, 200)) });
     await pages[k].goto(URLS[k], { waitUntil: "networkidle" }); await pages[k].evaluate(() => document.fonts.ready);
-    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT, { policies: POLICIES, headings: PAGE_HEADINGS, guides: PAGE_GUIDES }) }
+    if (k == "orig") { if (ORIGINAL_OVERRIDES) await pages[k].addStyleTag({ content: ORIGINAL_OVERRIDES }); await pages[k].evaluate(ORIGINAL_SCRIPT, { policies: POLICIES, headings: PAGE_HEADINGS, guides: PAGE_GUIDES, samples: SAMPLE_REVIEWS }) }
     // 브라우저의 스크롤 고정(scroll anchoring)은 양쪽 모두 끄고 비교.
     // 원본은 화면을 다시 그릴 때마다 요소를 새로 만들어 이 기능이 거의 동작하지 않았고, React는 요소를 유지해 동작함 (docs/differences.md)
     await pages[k].addStyleTag({ content: "*{overflow-anchor:none!important}" });
