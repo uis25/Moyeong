@@ -91,7 +91,26 @@ export default function AppProvider({ initial, children }) {
   function changePage(n) { flushSync(() => { setPage(n) }); scrollToListTop() }
 
   /* ---- 정책별 저장 데이터 ---- */
-  async function toggleOpen(id) { setOpenId(o => o == id ? null : id); await saveConditions(conditions) }
+  /** 카드 머리가 상단 메뉴 뒤(화면 위)로 지나가 있으면 카드 머리가 메뉴 바로 아래에 오도록 스크롤 */
+  function keepCardTopVisible(id) {
+    const card = refs.cards.current[id]; if (!card) return;
+    const navH = document.querySelector("nav")?.getBoundingClientRect().height || 0, top = card.getBoundingClientRect().top;
+    if (top < navH) window.scrollBy({ top: top - navH - 12, behavior: "instant" });
+  }
+  /**
+   * 자세히 보기 ↔ 접기. 다른 카드가 열려 있던 채로 새 카드를 펼치면 위 카드가 접히며 내용이 당겨지므로,
+   * 누른 카드가 누르기 전과 같은 화면 위치에 그대로 있도록 같은 순간에 스크롤을 되돌림 (docs/differences.md 34번)
+   */
+  async function toggleOpen(id) {
+    const prev = openId, card = refs.cards.current[id];
+    const before = prev && prev != id && card ? card.getBoundingClientRect().top : null;
+    flushSync(() => setOpenId(o => o == id ? null : id));
+    if (before != null) {
+      const shift = card.getBoundingClientRect().top - before;
+      if (shift) window.scrollBy({ top: shift, behavior: "instant" });
+    }
+    await saveConditions(conditions);
+  }
   async function toggleFavorite(id) {
     const on = favorites.includes(id);
     setFavorites(on ? favorites.filter(x => x != id) : [...favorites, id]);
@@ -137,7 +156,7 @@ export default function AppProvider({ initial, children }) {
     QX, QRE, list, page: currentPage, totalPages, statuses, refs,
     goView, scrollToListTop, search, changeQueryInput, clearQuery,
     changeCondition, toggleFilter, resetAll, changeSort, changeHideMismatch, changeHideClosed, changePage,
-    toggleOpen, toggleFavorite, toggleRecord, toggleDocument,
+    toggleOpen, keepCardTopVisible, toggleFavorite, toggleRecord, toggleDocument,
     heroCta, sortGo, goConditions, goTarget, openPolicy,
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

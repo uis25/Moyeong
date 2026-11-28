@@ -29,6 +29,9 @@ const settle = (p, ms = 900) => p.waitForTimeout(ms);
 const ORIGINAL_OVERRIDES = [
   ".upcoming{background:var(--g2);color:var(--g);opacity:.45}", // 접수 예정 배지 (흐린 초록)
   ".ex{overflow-wrap:anywhere}", // 자세히 보기: 띄어쓰기 없는 긴 글자도 줄바꿈 (차이 27번)
+  "body{word-break:keep-all;overflow-wrap:break-word}", // 어절 단위 줄바꿈 (차이 33번)
+  ".cfold{margin-top:var(--space-16)}.cfold .btn{width:100%}", // 상세 맨 아래 접기 버튼 (차이 32번)
+  ".ctoggle{display:inline-grid;place-items:center}.ctoggle>span{grid-area:1/1}.ctoggle>.off{visibility:hidden}", // 자세히 보기 ↔ 접기 너비 고정 (차이 32번)
   // 글꼴 출처 차이(차이 3번): Google Fonts와 npm 패키지의 글꼴 파일이 ◉ 기호를 몇 픽셀 다르게 그림 → 원본 쪽 ◉도 React와 같은 파일로
   // (같은 글꼴 이름·범위가 겹치면 나중에 정의한 @font-face가 먼저 쓰임)
   ...[400, 500, 700, 800].map(w => `@font-face{font-family:"Noto Sans KR";font-weight:${w};font-style:normal;unicode-range:U+25C9;src:url(/node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-96-${w}-normal.woff2) format("woff2")}`),
@@ -53,6 +56,21 @@ const ORIGINAL_SCRIPT = ({ policies, headings, guides, samples }) => {
   const lsSet = ls.set;
   ls.set = (k, v) => lsSet(k, k == "bmy_rv" && Array.isArray(v) ? v.filter(r => !String(r.authorId).startsWith("sample-")) : v);
   UR.unshift(...samples);
+  // 카드 위치 맞춤 (React와 같은 동작). 원본 클릭 처리(document)보다 먼저 이전 상태를 기억하고(capture), 다시 그린 뒤(window bubble) 맞춤
+  // - 다른 카드가 열린 채 새 카드를 펼치면: 누른 카드가 누르기 전 화면 위치에 그대로 (차이 34번)
+  // - 아래 접기: 카드 머리가 메뉴 뒤로 지나가 있으면 카드 머리로 (차이 32번)
+  let prevOpen = null, prevTop = null;
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-open]"); if (!b) return;
+    prevOpen = open; prevTop = document.getElementById("card-" + b.dataset.open).getBoundingClientRect().top;
+  }, true);
+  window.addEventListener("click", e => {
+    const b = e.target.closest("[data-open]"); if (!b) return;
+    const id = b.dataset.open, card = document.getElementById("card-" + id); if (!card) return;
+    const top = card.getBoundingClientRect().top;
+    if (b.closest(".cfold")) { const navH = document.querySelector("nav").getBoundingClientRect().height; if (top < navH) window.scrollBy({ top: top - navH - 12, behavior: "instant" }) }
+    else if (prevOpen && prevOpen != id && open == id && top != prevTop) window.scrollBy({ top: top - prevTop, behavior: "instant" });
+  });
   // 날짜 문자열을 현지 0시로 읽도록 원본 status·dday도 같이 고침 (시작일 당일 = 모집 중, 차이 29번)
   const localDay = s => { const [y, m, d] = s.split("-"); return new Date(+y, m - 1, +d) };
   window.dday = p => Math.round((localDay(p.applicationEnd) - TODAY) / 864e5);
@@ -78,7 +96,12 @@ const ORIGINAL_SCRIPT = ({ policies, headings, guides, samples }) => {
     .replace(/<div class="ex2"><div class="exc"><h4>신청 대상 및 자격<\/h4>[\s\S]*?<\/div><div class="exc">(<h4>내 조건과 비교[\s\S]*?<div class="note">정책 기준:[^<]*<\/div>)<\/div><\/div>/, "$1")
     // 예시 후기에는 "예시 후기" 배지 (차이 31번). 예시 후기는 정책마다 작성일이 서로 달라 날짜로 구분
     .replace(/(<span class="meta">(\d{4}-\d{2}-\d{2})<\/span>)(?=<div class="chips")/g, (m, span, d) =>
-      samples.some(r => r.policyId == x.p.id && r.createdAt == d) ? span + ' <span class="badge gr">예시 후기</span>' : m);
+      samples.some(r => r.policyId == x.p.id && r.createdAt == d) ? span + ' <span class="badge gr">예시 후기</span>' : m)
+    // 정책 카드 버튼 (차이 32번): '자세히 보기'는 진한 초록, 관심 버튼은 공식 링크 버튼 옆으로, 펼치면 상세 맨 아래에도 접기 버튼
+    .replace(/<button class="btn s" (data-open="[^"]*" aria-expanded="(true|false)")>[^<]*<\/button>/, (m, attrs, o) =>
+      `<button class="btn ctoggle" ${attrs}><span${o == "true" ? ' class="off"' : ""}>자세히 보기</span><span${o == "true" ? "" : ' class="off"'}>접기</span></button>`)
+    .replace(/\s*(<button class="ic" data-fav="[^"]*"[^>]*>[^<]*<\/button>)(<\/div>\s*<div class="cact">[\s\S]*?)(<\/div>)/, "$2$1$3")
+    .replace(/<\/div><\/article>$/, `<div class="cfold"><button class="btn s" data-open="${x.p.id}" aria-expanded="true">접기</button></div></div></article>`);
   // 목록 정렬: 모집 상태 순서(마감 임박·모집 중 → 접수 예정 → 확인 필요 → 마감) 추가.
   // 원본 render() 안의 정렬 부분만 바꿔 같은 이름으로 다시 정의 (render를 부르는 다른 함수들도 새 render를 씀)
   const SORT_OLD = 'L.sort((a,b)=>{const c=(a.st=="마감")-(b.st=="마감");if(c)return c;if(so=="due"){if(a.st=="마감")return end(b.p)-end(a.p);return end(a.p)-end(b.p)}if(so=="new")return(b.p.reg||"").localeCompare(a.p.reg||"");return rank[a.e.overall]-rank[b.e.overall]||(QX.length?b.qs-a.qs:0)||b.e.score-a.e.score});';
@@ -118,7 +141,7 @@ const ORIGINAL_SCRIPT = ({ policies, headings, guides, samples }) => {
     let cur = "home";
     window.__guide = (v, focus) => {
       cur = v; const g = guides[v], closed = load().includes(v);
-      box.innerHTML = !g ? "" : closed ? '<div class="guideopen"><button type="button" class="lnk">이용 가이드 다시 보기</button></div>'
+      box.innerHTML = !g ? "" : closed ? '<div class="guideopen"><button type="button" class="lnk">이용 가이드</button></div>'
         : `<section class="guide" aria-labelledby="guide-h"><div class="ghead"><h2 id="guide-h">${esc(g.title)}</h2><button type="button" class="gclose">가이드 닫기<span aria-hidden="true">✕</span></button></div>`
           + (g.flow ? `<ol class="gflow">${g.flow.map(x => `<li><span>${esc(x)}</span></li>`).join("")}</ol><p class="gtext">${rich(g.text)}</p>`
             : `<ol class="gsteps">${g.steps.map(([t, d], i) => `<li><span class="gnum" aria-hidden="true">${i + 1}</span><div><b>${esc(t)}</b><p>${rich(d)}</p></div></li>`).join("")}</ol>`) + "</section>";

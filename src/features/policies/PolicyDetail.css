@@ -10,3 +10,6 @@
 .doc{display:flex;align-items:center;gap:var(--space-12);min-height:var(--size-touch);margin:0;font-size:var(--font-size-16);line-height:var(--line-height-24);color:var(--color-text);cursor:pointer}
 .links{display:flex;gap:var(--space-8);flex-wrap:wrap;margin-top:var(--space-12)}
 .links a{text-decoration:none}
+/* 상세 맨 아래 접기 버튼 */
+.cfold{margin-top:var(--space-16)}
+.cfold .btn{width:100%}

@@ -8,3 +8,7 @@ mark.qh{background:none;color:var(--orange-700);font-weight:var(--font-weight-ex
 .card.dim{opacity:.6}
 .card h3{margin:var(--space-8) 0 var(--space-4);font-size:var(--font-size-20);line-height:var(--line-height-28)}
 .cact{display:flex;gap:var(--space-8);flex-wrap:wrap;margin-top:var(--space-12)}
+/* 자세히 보기 ↔ 접기 버튼: 너비 고정 (두 글자를 겹쳐 두고 안 쓰는 쪽은 숨김) */
+.ctoggle{display:inline-grid;place-items:center}
+.ctoggle>span{grid-area:1/1}
+.ctoggle>.off{visibility:hidden}

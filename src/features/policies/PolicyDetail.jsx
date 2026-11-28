@@ -19,7 +19,7 @@ function OfficialLink({ url, label, variant }) {
     : <Button as="a" variant={variant} aria-disabled="true" style={{ opacity: "var(--opacity-disabled)", pointerEvents: "none" }}>{`${label} ↗`}</Button>;
 }
 
-export default function PolicyDetail({ item, reviews }) {
+export default function PolicyDetail({ item, reviews, onFold }) {
   const { QRE } = useApp();
   const p = item.p;
   return <div className="ex">
@@ -41,5 +41,7 @@ export default function PolicyDetail({ item, reviews }) {
     <div className="note">{p.applicationUrl || p.officialNoticeUrl ? "외부 사이트로 이동합니다." : "확인된 공식 링크가 없습니다. 아래 참고 링크나 해당 기관 사이트에서 공고를 확인해 주십시오."}</div>
     {(p.references || []).length ? <ul className="refs">{p.references.map((r, i) => <li key={i}><a href={r.url} target="_blank" rel="noopener noreferrer">{`${r.label} ↗`}</a></li>)}</ul> : null}
     <div className="note">{`출처: ${p.sourceName} · 확인일 ${p.lastVerifiedAt || "미확인"}`}</div>
+    {/* 긴 상세를 다 읽은 뒤 위로 올라가지 않고 바로 접기 */}
+    <div className="cfold"><Button variant="soft" aria-expanded="true" onClick={onFold}>접기</Button></div>
   </div>;
 }

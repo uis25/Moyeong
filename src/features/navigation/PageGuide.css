@@ -22,7 +22,7 @@
 .guide p b{color:var(--color-text)}
 .guide p b.gstart{color:var(--color-primary)}
 .guide p b.gend{color:var(--color-danger)}
-/* 닫은 뒤 '이용 가이드 다시 보기' (오른쪽 끝 작은 링크) */
+/* 닫은 뒤 '이용 가이드' (오른쪽 끝 작은 링크) */
 .guideopen{display:flex;justify-content:flex-end;margin:-12px 0 var(--space-12)}
 .guideopen .lnk{font-size:var(--font-size-14);line-height:var(--line-height-20)}
 @media(max-width:720px){

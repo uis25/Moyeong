@@ -1,4 +1,4 @@
-// 화면별 이용 가이드 (제목 아래 상자). 오른쪽 위 '가이드 닫기 ✕'로 닫고, 닫은 뒤에는 '이용 가이드 다시 보기'로 다시 열기
+// 화면별 이용 가이드 (제목 아래 상자). 오른쪽 위 '가이드 닫기 ✕'로 닫고, 닫은 뒤에는 '이용 가이드'로 다시 열기
 // 닫은 상태는 화면마다 따로 이 기기에 저장 (guideService)
 import { useEffect, useRef, useState } from "react";
 import { PAGE_GUIDES } from "../../constants/navigation";
@@ -14,7 +14,7 @@ export default function PageGuide() {
   const focusRef = useRef(null), moved = useRef(false);
   const g = PAGE_GUIDES[view], isClosed = closed.includes(view);
 
-  // 닫으면 '다시 보기'로, 다시 열면 '가이드 닫기'로 포커스 (누른 버튼이 사라지므로)
+  // 닫으면 '이용 가이드'로, 다시 열면 '가이드 닫기'로 포커스 (누른 버튼이 사라지므로)
   useEffect(() => { if (moved.current) { moved.current = false; focusRef.current?.focus() } }, [isClosed]);
   function toggle(close) {
     const next = close ? [...closed.filter(v => v != view), view] : closed.filter(v => v != view);
@@ -22,7 +22,7 @@ export default function PageGuide() {
   }
 
   if (!g) return null;
-  if (isClosed) return <div className="guideopen"><button type="button" className="lnk" ref={focusRef} onClick={() => toggle(false)}>이용 가이드 다시 보기</button></div>;
+  if (isClosed) return <div className="guideopen"><button type="button" className="lnk" ref={focusRef} onClick={() => toggle(false)}>이용 가이드</button></div>;
   return <section className="guide" aria-labelledby="guide-h">
     <div className="ghead"><h2 id="guide-h">{g.title}</h2><button type="button" className="gclose" ref={focusRef} onClick={() => toggle(true)}>가이드 닫기<span aria-hidden="true">✕</span></button></div>
     {g.flow
